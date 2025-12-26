@@ -1,0 +1,64 @@
+@config "../../tailwind.config.js";
+@import "tailwindcss";
+
+:root {
+  --bg: 250 250 251;
+  --panel: 255 255 255;
+  --panel-2: 248 248 250;
+  --text: 17 24 39;
+  --muted: 100 116 139;
+  --border: 226 232 240;
+  --primary: 59 130 246;
+  --danger: 239 68 68;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: radial-gradient(
+      900px 500px at 15% 10%,
+      rgba(59, 130, 246, 0.08),
+      transparent 60%
+    ),
+    radial-gradient(
+      700px 350px at 85% 15%,
+      rgba(96, 165, 250, 0.06),
+      transparent 65%
+    ),
+    rgb(var(--bg));
+  color: rgb(var(--text));
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    "Noto Sans CJK SC", "Noto Sans", Arial, "Apple Color Emoji",
+    "Segoe UI Emoji";
+}
+
+* {
+  min-width: 0;
+}
+
+::selection {
+  background: rgba(59, 130, 246, 0.28);
+}
+
+/* 让滚动条更克制一些（不追求完全一致，主要提升观感） */
+@supports selector(::-webkit-scrollbar) {
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(100, 116, 139, 0.35);
+    border-radius: 999px;
+    border: 2px solid rgba(0, 0, 0, 0);
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(100, 116, 139, 0.48);
+    border: 2px solid rgba(0, 0, 0, 0);
+    background-clip: padding-box;
+  }
+}

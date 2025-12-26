@@ -1,0 +1,53 @@
+# ---- 需要同步 ----
+!frontend/.env
+
+# ---- 通用 ----
+.DS_Store
+.idea/
+.vscode/
+*.log
+*.tmp
+.claude/
+
+# ---- Python / Backend ----
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+.venv/
+venv/
+
+# Conda / 环境
+env/
+*.conda
+
+# ---- 数据与日志 ----
+data/logs/
+data/temp/
+temp/
+
+# ---- Node.js / Frontend ----
+node_modules/
+.next/
+.turbo/
+*.tsbuildinfo
+
+# ---- 本地配置 ----
+.env
+.env.*
+.DS_Backup/
+.claude/
+
+# ---- 本项目特有 ----
+references/
+old/
+backend/workspaces/
+backend/data/
+
+AGENTS.md
+CLAUDE.md
+GEMINI.md
