@@ -29,6 +29,9 @@ env/
 data/logs/
 data/temp/
 temp/
+!temp/check_no_references_usage.py
+!temp/validate_profile_v0_2.py
+!temp/backend_edit_try_v0_2.py
 
 # ---- Node.js / Frontend ----
 node_modules/
@@ -44,8 +47,9 @@ node_modules/
 
 # ---- 本项目特有 ----
 references/
-old/
-backend/workspaces/
+/old/
+backend/workspace/
+!backend/workspace/.gitkeep
 backend/data/
 
 AGENTS.md

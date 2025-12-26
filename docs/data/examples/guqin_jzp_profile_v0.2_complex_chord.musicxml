@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.1">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Guqin</part-name>
+    </score-part>
+  </part-list>
+
+  <part id="P1">
+    <measure number="1">
+      <attributes>
+        <divisions>480</divisions>
+        <key>
+          <fifths>0</fifths>
+        </key>
+        <time>
+          <beats>4</beats>
+          <beat-type>4</beat-type>
+        </time>
+        <staves>2</staves>
+        <clef number="1">
+          <sign>jianpu</sign>
+        </clef>
+        <clef number="2">
+          <sign>TAB</sign>
+        </clef>
+      </attributes>
+
+      <!-- staff 1：一个事件（E000002）对应 2-note chord（多个同时音） -->
+      <note id="N000002A">
+        <pitch>
+          <step>C</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>480</duration>
+        <type>quarter</type>
+        <voice>1</voice>
+        <staff>1</staff>
+        <notations>
+          <technical>
+            <string>3</string>
+            <other-technical>GuqinLink@0.2;eid=E000002;slot=L;</other-technical>
+          </technical>
+        </notations>
+        <lyric number="1" placement="above">
+          <text>1</text>
+        </lyric>
+      </note>
+
+      <note id="N000002B">
+        <chord />
+        <pitch>
+          <step>E</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>480</duration>
+        <type>quarter</type>
+        <voice>1</voice>
+        <staff>1</staff>
+        <notations>
+          <technical>
+            <string>4</string>
+            <other-technical>GuqinLink@0.2;eid=E000002;slot=R;</other-technical>
+          </technical>
+        </notations>
+        <lyric number="1" placement="above">
+          <text>3</text>
+        </lyric>
+      </note>
+
+      <backup>
+        <duration>480</duration>
+      </backup>
+
+      <!-- staff 2：同一事件用 1 个谱字承载撮式/复式结构 -->
+      <note id="N000002C">
+        <pitch>
+          <step>C</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>480</duration>
+        <type>quarter</type>
+        <voice>2</voice>
+        <staff>2</staff>
+        <notehead>none</notehead>
+        <notations>
+          <technical>
+            <other-technical>
+              GuqinJZP@0.2;eid=E000002;form=complex;lex=abbr;complex_finger=撮;l_hui_finger=大指;l_hui=7;l_fen=7;l_xian=3;r_hui_finger=散音;r_xian=4;
+            </other-technical>
+          </technical>
+        </notations>
+        <lyric number="1" placement="below">
+          <text>撮大七七三散四</text>
+        </lyric>
+      </note>
+    </measure>
+  </part>
+</score-partwise>
+

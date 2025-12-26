@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.1">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Guqin</part-name>
+    </score-part>
+  </part-list>
+
+  <part id="P1">
+    <measure number="1">
+      <attributes>
+        <divisions>480</divisions>
+        <key>
+          <fifths>0</fifths>
+        </key>
+        <time>
+          <beats>4</beats>
+          <beat-type>4</beat-type>
+        </time>
+        <staves>2</staves>
+        <clef number="1">
+          <sign>jianpu</sign>
+        </clef>
+        <clef number="2">
+          <sign>TAB</sign>
+        </clef>
+      </attributes>
+
+      <!-- staff 1：简谱层（节奏/音高），并携带 eid 链接 -->
+      <note id="N000001A">
+        <pitch>
+          <step>C</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>480</duration>
+        <type>quarter</type>
+        <voice>1</voice>
+        <staff>1</staff>
+        <notations>
+          <technical>
+            <string>3</string>
+            <other-technical>GuqinLink@0.2;eid=E000001;</other-technical>
+          </technical>
+        </notations>
+        <lyric number="1" placement="above">
+          <text>1</text>
+        </lyric>
+      </note>
+
+      <backup>
+        <duration>480</duration>
+      </backup>
+
+      <!-- staff 2：减字谱层（谱字语法树真值），并携带 jzp_text（lyric below） -->
+      <note id="N000001B">
+        <pitch>
+          <step>C</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>480</duration>
+        <type>quarter</type>
+        <voice>2</voice>
+        <staff>2</staff>
+        <notehead>none</notehead>
+        <notations>
+          <technical>
+            <other-technical>
+              GuqinJZP@0.2;eid=E000001;form=simple;lex=abbr;hui_finger=大指;hui=1;fen=6;xian_finger=勾;xian=3;
+            </other-technical>
+          </technical>
+        </notations>
+        <lyric number="1" placement="below">
+          <text>大一六勾三</text>
+        </lyric>
+      </note>
+    </measure>
+  </part>
+</score-partwise>
+

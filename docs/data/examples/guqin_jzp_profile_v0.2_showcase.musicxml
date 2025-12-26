@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.1">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Guqin</part-name>
+    </score-part>
+  </part-list>
+
+  <part id="P1">
+    <measure number="1">
+      <print new-system="yes" />
+      <attributes>
+        <divisions>480</divisions>
+        <key>
+          <fifths>0</fifths>
+        </key>
+        <time>
+          <beats>4</beats>
+          <beat-type>4</beat-type>
+        </time>
+        <staves>2</staves>
+        <clef number="1">
+          <sign>jianpu</sign>
+        </clef>
+        <clef number="2">
+          <sign>TAB</sign>
+        </clef>
+      </attributes>
+
+      <!-- staff 1：简谱层（节奏/音高），每个事件用 eid 绑定到 staff 2 -->
+      <note id="N010001A">
+        <pitch>
+          <step>C</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>480</duration>
+        <type>quarter</type>
+        <voice>1</voice>
+        <staff>1</staff>
+        <notations>
+          <technical>
+            <string>3</string>
+            <other-technical>GuqinLink@0.2;eid=E010001;</other-technical>
+          </technical>
+        </notations>
+        <lyric number="1" placement="above">
+          <text>1</text>
+        </lyric>
+      </note>
+
+      <!-- E010002：撮式结构，对应 2-note chord（slot=L/R） -->
+      <note id="N010002A">
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>480</duration>
+        <type>quarter</type>
+        <voice>1</voice>
+        <staff>1</staff>
+        <notations>
+          <technical>
+            <string>3</string>
+            <other-technical>GuqinLink@0.2;eid=E010002;slot=L;</other-technical>
+          </technical>
+        </notations>
+        <lyric number="1" placement="above">
+          <text>2</text>
+        </lyric>
+      </note>
+      <note id="N010002B">
+        <chord />
+        <pitch>
+          <step>F</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>480</duration>
+        <type>quarter</type>
+        <voice>1</voice>
+        <staff>1</staff>
+        <notations>
+          <technical>
+            <string>4</string>
+            <other-technical>GuqinLink@0.2;eid=E010002;slot=R;</other-technical>
+          </technical>
+        </notations>
+        <lyric number="1" placement="above">
+          <text>4</text>
+        </lyric>
+      </note>
+
+      <!-- E010003：历五四，对应 2-note chord（slot=1/2） -->
+      <note id="N010003A">
+        <pitch>
+          <step>E</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>480</duration>
+        <type>quarter</type>
+        <voice>1</voice>
+        <staff>1</staff>
+        <notations>
+          <technical>
+            <string>5</string>
+            <other-technical>GuqinLink@0.2;eid=E010003;slot=1;</other-technical>
+          </technical>
+        </notations>
+        <lyric number="1" placement="above">
+          <text>3</text>
+        </lyric>
+      </note>
+      <note id="N010003B">
+        <chord />
+        <pitch>
+          <step>G</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>480</duration>
+        <type>quarter</type>
+        <voice>1</voice>
+        <staff>1</staff>
+        <notations>
+          <technical>
+            <string>4</string>
+            <other-technical>GuqinLink@0.2;eid=E010003;slot=2;</other-technical>
+          </technical>
+        </notations>
+        <lyric number="1" placement="above">
+          <text>5</text>
+        </lyric>
+      </note>
+
+      <!-- E010004：展示 lex=ortho（带“徽/分/弦”单位） -->
+      <note id="N010004A">
+        <pitch>
+          <step>A</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>480</duration>
+        <type>quarter</type>
+        <voice>1</voice>
+        <staff>1</staff>
+        <notations>
+          <technical>
+            <string>3</string>
+            <other-technical>GuqinLink@0.2;eid=E010004;</other-technical>
+          </technical>
+        </notations>
+        <lyric number="1" placement="above">
+          <text>6</text>
+        </lyric>
+      </note>
+
+      <backup>
+        <duration>1920</duration>
+      </backup>
+
+      <!-- staff 2：减字谱层（GuqinJZP@0.2 真值 + jzp_text） -->
+      <note id="N010001B">
+        <pitch>
+          <step>C</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>480</duration>
+        <type>quarter</type>
+        <voice>2</voice>
+        <staff>2</staff>
+        <notehead>none</notehead>
+        <notations>
+          <technical>
+            <other-technical>
+              GuqinJZP@0.2;eid=E010001;form=simple;lex=abbr;hui_finger=散音;xian_finger=勾;xian=3;
+            </other-technical>
+          </technical>
+        </notations>
+        <lyric number="1" placement="below">
+          <text>散勾三</text>
+        </lyric>
+      </note>
+
+      <note id="N010002C">
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>480</duration>
+        <type>quarter</type>
+        <voice>2</voice>
+        <staff>2</staff>
+        <notehead>none</notehead>
+        <notations>
+          <technical>
+            <other-technical>
+              GuqinJZP@0.2;eid=E010002;form=complex;lex=abbr;complex_finger=撮;l_hui_finger=大指;l_hui=7;l_fen=6;l_special=注;l_xian=3;r_hui_finger=名指;r_hui=6;r_fen=2;r_special=绰;r_xian=4;
+            </other-technical>
+          </technical>
+        </notations>
+        <lyric number="1" placement="below">
+          <text>撮大七六注三名六二绰四</text>
+        </lyric>
+      </note>
+
+      <!-- E010003 前插入 direction token（不消耗时值） -->
+      <direction placement="below">
+        <direction-type>
+          <words>GuqinTok@0.2;tid=T010001;kind=both;value=分开;anchor_eid=E010003;pos=before;</words>
+        </direction-type>
+        <staff>2</staff>
+      </direction>
+      <direction placement="below">
+        <direction-type>
+          <words>GuqinTok@0.2;tid=T010002;kind=marker;value=少息;anchor_eid=E010003;pos=before;</words>
+        </direction-type>
+        <staff>2</staff>
+      </direction>
+
+      <note id="N010003C">
+        <pitch>
+          <step>E</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>480</duration>
+        <type>quarter</type>
+        <voice>2</voice>
+        <staff>2</staff>
+        <notehead>none</notehead>
+        <notations>
+          <technical>
+            <other-technical>
+              GuqinJZP@0.2;eid=E010003;form=simple;lex=abbr;xian_finger=历;xian=5,4;
+            </other-technical>
+          </technical>
+        </notations>
+        <lyric number="1" placement="below">
+          <text>历五四</text>
+        </lyric>
+      </note>
+
+      <!-- E010004：lex=ortho 示例 -->
+      <note id="N010004B">
+        <pitch>
+          <step>A</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>480</duration>
+        <type>quarter</type>
+        <voice>2</voice>
+        <staff>2</staff>
+        <notehead>none</notehead>
+        <notations>
+          <technical>
+            <other-technical>
+              GuqinJZP@0.2;eid=E010004;form=simple;lex=ortho;hui_finger=大指;hui=9;fen=HALF;xian_finger=挑;xian=3;
+            </other-technical>
+          </technical>
+        </notations>
+        <lyric number="1" placement="below">
+          <text>大指九徽半挑三弦</text>
+        </lyric>
+      </note>
+
+      <!-- E010004 后插入一个 aside token（不消耗时值） -->
+      <direction placement="below">
+        <direction-type>
+          <words>GuqinTok@0.2;tid=T010003;kind=aside;value=吟;anchor_eid=E010004;pos=after;</words>
+        </direction-type>
+        <staff>2</staff>
+      </direction>
+    </measure>
+  </part>
+</score-partwise>
+
