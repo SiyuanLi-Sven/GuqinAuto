@@ -4,12 +4,21 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs } from "@/components/ui/tabs";
 import { TopNav } from "@/components/app/top-nav";
-import { useMemo, useState } from "react";
+import { OsmdViewer } from "@/components/score/osmd-viewer";
+import { DualScoreView, ProjectScoreView } from "@/components/score/dual-score-view";
+import { http, HttpError } from "@/lib/http";
+import { useEffect, useMemo, useState } from "react";
 
 type InspectorTab = "简谱属性" | "减字属性" | "候选与诊断" | "回放表现";
+type CenterView = "综合视图" | "OSMD";
 
-export function EditorShell() {
+export function EditorShell(props: { projectId?: string | null }) {
   const [tab, setTab] = useState<InspectorTab>("简谱属性");
+  const [centerView, setCenterView] = useState<CenterView>("综合视图");
+  const [musicxml, setMusicxml] = useState<string>("");
+  const [score, setScore] = useState<ProjectScoreView | null>(null);
+  const [source, setSource] = useState<"builtin" | "backend">("builtin");
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const status = useMemo(() => {
     return {
@@ -20,6 +29,80 @@ export function EditorShell() {
       bpm: 72,
     };
   }, []);
+
+  async function loadBuiltinExample() {
+    setLoadError(null);
+    setSource("builtin");
+    try {
+      const res = await fetch("/examples/guqin_jzp_profile_v0.2_showcase.musicxml");
+      if (!res.ok) throw new Error(`加载内置示例失败：HTTP ${res.status}`);
+      const xml = await res.text();
+      setMusicxml(xml);
+      setScore(parseMusicXmlToDualView(xml));
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setLoadError(msg);
+    }
+  }
+
+  async function loadFromBackend() {
+    setLoadError(null);
+    setSource("backend");
+    const projectId = props.projectId;
+    if (!projectId) {
+      setLoadError("缺少 projectId：请从项目页打开，或在 URL 里传 ?projectId=xxx");
+      return;
+    }
+    try {
+      const data = await http<ProjectScoreView>(
+        `/api/backend/projects/${encodeURIComponent(projectId)}/score`
+      );
+      setScore(data);
+
+      // OSMD 视图需要 XML：只在用户切换到 OSMD 时再拉取，避免无意义的额外请求。
+      if (centerView === "OSMD") {
+        const xmlData = await http<{ musicxml: string }>(
+          `/api/backend/projects/${encodeURIComponent(projectId)}/musicxml`
+        );
+        setMusicxml(xmlData.musicxml);
+      }
+    } catch (err) {
+      const e = err as HttpError;
+      setLoadError(
+        e?.name === "HttpError"
+          ? `后端请求失败：${e.status} ${e.url}\n${e.bodyText ?? ""}`
+          : `后端请求失败：${err instanceof Error ? err.message : String(err)}`
+      );
+    }
+  }
+
+  useEffect(() => {
+    // 默认行为：有 projectId 就拉后端真源；否则直接加载内置示例，保证“打开编辑器就能看到谱面”。
+    if (props.projectId) {
+      void loadFromBackend();
+    } else {
+      void loadBuiltinExample();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.projectId]);
+
+  useEffect(() => {
+    // 若用户切到 OSMD 且当前源是 backend，但还没拉 XML，则补一次拉取。
+    if (centerView !== "OSMD") return;
+    if (source !== "backend") return;
+    if (!props.projectId) return;
+    if (musicxml) return;
+    void (async () => {
+      try {
+        const xmlData = await http<{ musicxml: string }>(
+          `/api/backend/projects/${encodeURIComponent(props.projectId!)}/musicxml`
+        );
+        setMusicxml(xmlData.musicxml);
+      } catch {
+        // 这里不吞错：由 loadError 主路径负责显示。
+      }
+    })();
+  }, [centerView, source, props.projectId, musicxml]);
 
   return (
     <div className="min-h-screen">
@@ -54,27 +137,47 @@ export function EditorShell() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button size="sm" variant="ghost">
-                    同步滚动
+                  <Button size="sm" variant={source === "builtin" ? "secondary" : "ghost"} onClick={loadBuiltinExample}>
+                    加载内置示例
                   </Button>
-                  <Button size="sm" variant="ghost">
-                    同步光标
+                  <Button size="sm" variant={source === "backend" ? "secondary" : "ghost"} onClick={loadFromBackend}>
+                    从后端加载
                   </Button>
                 </div>
               </div>
               <div className="mt-4 space-y-3">
-                <ScoreSystem
-                  title="第 1 行（小节 1–4）"
-                  subtitle="点击任意音符后：整行高亮同一 note-id，并在右侧 Inspector 打开。"
-                />
-                <ScoreSystem
-                  title="第 2 行（小节 5–8）"
-                  subtitle="后续 OSMD 渲染建议以“同一份 MusicXML 的两层显示/或两条 staff”实现。"
-                />
-                <ScoreSystem
-                  title="第 3 行（小节 9–12）"
-                  subtitle="这里仅是交互骨架占位：真实渲染与命中测试后再定细节。"
-                />
+                <div className="flex items-center justify-between gap-2">
+                  <div className="text-xs text-muted">
+                    默认展示“综合视图”（真实需求）。OSMD 仅用于调试 MusicXML 渲染器能力。
+                  </div>
+                  <div className="min-w-[220px]">
+                    <Tabs<CenterView>
+                      items={["综合视图", "OSMD"]}
+                      value={centerView}
+                      onChange={setCenterView}
+                    />
+                  </div>
+                </div>
+                {loadError ? (
+                  <div className="rounded-xl border border-danger/30 bg-panel2 p-3 text-xs text-muted whitespace-pre-wrap">
+                    {loadError}
+                  </div>
+                ) : null}
+                {centerView === "综合视图" ? (
+                  score ? (
+                    <DualScoreView score={score} />
+                  ) : (
+                    <div className="rounded-xl border border-border bg-panel2 p-3 text-xs text-muted">
+                      还未加载谱面（score view）。请点击“加载内置示例”或“从后端加载”。
+                    </div>
+                  )
+                ) : !musicxml ? (
+                  <div className="rounded-xl border border-border bg-panel2 p-3 text-xs text-muted">
+                    OSMD 视图需要 MusicXML 文本；当前尚未获取到 XML。
+                  </div>
+                ) : (
+                  <OsmdViewer musicxml={musicxml} className="rounded-xl" />
+                )}
               </div>
             </Card>
 
@@ -208,33 +311,6 @@ function EditorTopBar(props: {
   );
 }
 
-function ScoreSystem(props: { title: string; subtitle?: string }) {
-  return (
-    <div className="rounded-xl border border-border bg-panel2 p-3">
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <div className="text-xs font-semibold">{props.title}</div>
-        {props.subtitle ? (
-          <div className="text-xs text-muted">{props.subtitle}</div>
-        ) : null}
-      </div>
-      <div className="mt-3 grid gap-2">
-        <div className="rounded-lg border border-border bg-panel p-3">
-          <div className="text-[11px] font-medium text-muted">简谱（上）</div>
-          <div className="mt-2 h-14 rounded-md border border-dashed border-border bg-panel2/60 p-2 text-xs text-muted">
-            TODO：OSMD 渲染（简谱 clef-sign=jianpu），并与减字谱共享 note-id。
-          </div>
-        </div>
-        <div className="rounded-lg border border-border bg-panel p-3">
-          <div className="text-[11px] font-medium text-muted">减字谱（下）</div>
-          <div className="mt-2 h-14 rounded-md border border-dashed border-border bg-panel2/60 p-2 text-xs text-muted">
-            TODO：OSMD 渲染（减字谱 glyph/扩展槽位），与简谱联动高亮与选择。
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function InspectorCard(props: { title: string; body: string }) {
   return (
     <div className="rounded-xl border border-border bg-panel2 p-3">
@@ -242,4 +318,80 @@ function InspectorCard(props: { title: string; body: string }) {
       <div className="mt-2 text-xs text-muted">{props.body}</div>
     </div>
   );
+}
+
+function parseMusicXmlToDualView(xml: string): ProjectScoreView {
+  const doc = new DOMParser().parseFromString(xml, "application/xml");
+  const parserError = doc.getElementsByTagName("parsererror")[0];
+  if (parserError) {
+    throw new Error("MusicXML XML 解析失败（parsererror）");
+  }
+
+  const part = doc.getElementsByTagName("part")[0];
+  if (!part) throw new Error("MusicXML 缺少 <part>");
+
+  const measures = Array.from(part.getElementsByTagName("measure"));
+  const outMeasures: ProjectScoreView["measures"] = [];
+
+  for (const m of measures) {
+    const mNumber = m.getAttribute("number") ?? "";
+    const notes = Array.from(m.getElementsByTagName("note"));
+
+    const staff1Notes = notes.filter((n) => n.getElementsByTagName("staff")[0]?.textContent?.trim() === "1");
+    const staff2Notes = notes.filter((n) => n.getElementsByTagName("staff")[0]?.textContent?.trim() === "2");
+
+    const staff2ByEid = new Map<string, Element>();
+    for (const n of staff2Notes) {
+      const other = n.getElementsByTagName("other-technical")[0];
+      const text = other?.textContent?.trim() ?? "";
+      const mEid = /(?:^|;)eid=([^;]+)/.exec(text)?.[1];
+      if (!mEid) continue;
+      staff2ByEid.set(mEid, n);
+    }
+
+    const events: Array<{ eid: string; jianpu_text: string | null; jzp_text: string }> = [];
+    let currentEid: string | null = null;
+    let group: Element[] = [];
+
+    function flush() {
+      if (!currentEid) return;
+      const first = group[0];
+      const jianpuText =
+        Array.from(first.getElementsByTagName("lyric")).find((l) => l.getAttribute("placement") === "above")?.getElementsByTagName("text")[0]?.textContent?.trim() ??
+        null;
+
+      const staff2 = staff2ByEid.get(currentEid);
+      const jzpText =
+        (staff2
+          ? Array.from(staff2.getElementsByTagName("lyric")).find((l) => l.getAttribute("placement") === "below")?.getElementsByTagName("text")[0]?.textContent?.trim()
+          : null) ?? "（staff2 缺失）";
+
+      events.push({ eid: currentEid, jianpu_text: jianpuText, jzp_text: jzpText });
+    }
+
+    for (const n of staff1Notes) {
+      const other = n.getElementsByTagName("other-technical")[0];
+      const text = other?.textContent?.trim() ?? "";
+      const eid = /(?:^|;)eid=([^;]+)/.exec(text)?.[1];
+      if (!eid) continue;
+      if (currentEid === null) {
+        currentEid = eid;
+        group = [n];
+      } else if (eid === currentEid) {
+        group.push(n);
+      } else {
+        flush();
+        currentEid = eid;
+        group = [n];
+      }
+    }
+    flush();
+
+    outMeasures.push({
+      number: mNumber,
+      events: events.map((e) => ({ eid: e.eid, duration: 0, jzp_text: e.jzp_text, jianpu_text: e.jianpu_text })),
+    });
+  }
+
+  return { project_id: "builtin", revision: "builtin", measures: outMeasures };
 }

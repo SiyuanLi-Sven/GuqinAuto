@@ -50,11 +50,46 @@ def _write_json(p: Path, obj: dict[str, Any]) -> None:
 
 
 @dataclass(frozen=True)
+class ProjectTuning:
+    """项目调弦配置（绝对音高，便于 stage1 查表/枚举）。"""
+
+    name: str
+    open_pitches_midi: tuple[int, ...]  # len=7, string 1..7
+    transpose_semitones: int = 0
+
+    @staticmethod
+    def default_demo() -> "ProjectTuning":
+        # 参考常见示例：g, a, c d e g a（用 MIDI 近似表达）
+        return ProjectTuning(name="demo_g_a_c_d_e_g_a", open_pitches_midi=(55, 57, 60, 62, 64, 67, 69), transpose_semitones=0)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "name": self.name,
+            "open_pitches_midi": list(self.open_pitches_midi),
+            "transpose_semitones": int(self.transpose_semitones),
+        }
+
+    @classmethod
+    def from_dict(cls, d: dict[str, Any] | None) -> "ProjectTuning":
+        if not d:
+            return cls.default_demo()
+        name = str(d.get("name") or "custom")
+        open_pitches = d.get("open_pitches_midi")
+        if not isinstance(open_pitches, list) or len(open_pitches) != 7:
+            raise ValueError("tuning.open_pitches_midi 必须是长度为 7 的数组")
+        open_pitches_t = tuple(int(x) for x in open_pitches)
+        transpose = int(d.get("transpose_semitones") or 0)
+        return cls(name=name, open_pitches_midi=open_pitches_t, transpose_semitones=transpose)
+
+
+@dataclass(frozen=True)
 class ProjectMeta:
     project_id: str
     name: str
     created_at: str
+    updated_at: str
     current_revision: str
+    tuning: ProjectTuning
 
 
 def generate_project_id() -> str:
@@ -99,7 +134,9 @@ def list_projects() -> list[ProjectMeta]:
                 project_id=d["project_id"],
                 name=d["name"],
                 created_at=d["created_at"],
+                updated_at=str(d.get("updated_at") or d["created_at"]),
                 current_revision=d["current_revision"],
+                tuning=ProjectTuning.from_dict(d.get("tuning")),
             )
         )
     return out
@@ -111,7 +148,9 @@ def load_project_meta(project_id: str) -> ProjectMeta:
         project_id=d["project_id"],
         name=d["name"],
         created_at=d["created_at"],
+        updated_at=str(d.get("updated_at") or d["created_at"]),
         current_revision=d["current_revision"],
+        tuning=ProjectTuning.from_dict(d.get("tuning")),
     )
 
 
@@ -122,7 +161,9 @@ def save_project_meta(meta: ProjectMeta) -> None:
             "project_id": meta.project_id,
             "name": meta.name,
             "created_at": meta.created_at,
+            "updated_at": meta.updated_at,
             "current_revision": meta.current_revision,
+            "tuning": meta.tuning.to_dict(),
         },
     )
 
@@ -162,7 +203,7 @@ def _latest_id_in_dir(dir_path: Path, prefix: str, suffix: str) -> str | None:
     return best[1] if best else None
 
 
-def create_project_from_example(*, name: str, example_filename: str) -> ProjectMeta:
+def create_project_from_example(*, name: str, example_filename: str, tuning: ProjectTuning | None = None) -> ProjectMeta:
     ex_path = examples_dir() / example_filename
     if not ex_path.exists():
         raise FileNotFoundError(str(ex_path))
@@ -174,7 +215,15 @@ def create_project_from_example(*, name: str, example_filename: str) -> ProjectM
     rev_path = revisions_dir(project_id) / f"{revision}.musicxml"
     rev_path.write_bytes(ex_path.read_bytes())
 
-    meta = ProjectMeta(project_id=project_id, name=name, created_at=_utc_now_iso(), current_revision=revision)
+    now = _utc_now_iso()
+    meta = ProjectMeta(
+        project_id=project_id,
+        name=name,
+        created_at=now,
+        updated_at=now,
+        current_revision=revision,
+        tuning=tuning or ProjectTuning.default_demo(),
+    )
     save_project_meta(meta)
     return meta
 
@@ -209,7 +258,13 @@ def save_new_revision(*, project_id: str, base_revision: str, musicxml_bytes: by
     rev_path = revisions_dir(project_id) / f"{new_revision}.musicxml"
     rev_path.write_bytes(musicxml_bytes)
 
-    new_meta = ProjectMeta(project_id=meta.project_id, name=meta.name, created_at=meta.created_at, current_revision=new_revision)
+    new_meta = ProjectMeta(
+        project_id=meta.project_id,
+        name=meta.name,
+        created_at=meta.created_at,
+        updated_at=_utc_now_iso(),
+        current_revision=new_revision,
+        tuning=meta.tuning,
+    )
     save_project_meta(new_meta)
     return new_meta
-

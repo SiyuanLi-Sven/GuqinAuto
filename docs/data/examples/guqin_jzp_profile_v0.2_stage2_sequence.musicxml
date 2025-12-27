@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.1">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Guqin</part-name>
+    </score-part>
+  </part-list>
+
+  <part id="P1">
+    <measure number="1">
+      <print new-system="yes" />
+      <attributes>
+        <divisions>480</divisions>
+        <key>
+          <fifths>0</fifths>
+        </key>
+        <time>
+          <beats>4</beats>
+          <beat-type>4</beat-type>
+        </time>
+        <staves>2</staves>
+        <clef number="1">
+          <sign>jianpu</sign>
+        </clef>
+        <clef number="2">
+          <sign>TAB</sign>
+        </clef>
+      </attributes>
+
+      <!-- staff 1：单音序列（用于 stage2 的最小回归示例） -->
+      <note id="N020001A">
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>240</duration><type>eighth</type>
+        <voice>1</voice><staff>1</staff>
+        <notations><technical><string>3</string><other-technical>GuqinLink@0.2;eid=E020001;</other-technical></technical></notations>
+        <lyric number="1" placement="above"><text>1</text></lyric>
+      </note>
+      <note id="N020002A">
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <duration>240</duration><type>eighth</type>
+        <voice>1</voice><staff>1</staff>
+        <notations><technical><string>3</string><other-technical>GuqinLink@0.2;eid=E020002;</other-technical></technical></notations>
+        <lyric number="1" placement="above"><text>2</text></lyric>
+      </note>
+      <note id="N020003A">
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>240</duration><type>eighth</type>
+        <voice>1</voice><staff>1</staff>
+        <notations><technical><string>3</string><other-technical>GuqinLink@0.2;eid=E020003;</other-technical></technical></notations>
+        <lyric number="1" placement="above"><text>3</text></lyric>
+      </note>
+      <note id="N020004A">
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>240</duration><type>eighth</type>
+        <voice>1</voice><staff>1</staff>
+        <notations><technical><string>3</string><other-technical>GuqinLink@0.2;eid=E020004;</other-technical></technical></notations>
+        <lyric number="1" placement="above"><text>4</text></lyric>
+      </note>
+      <note id="N020005A">
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>240</duration><type>eighth</type>
+        <voice>1</voice><staff>1</staff>
+        <notations><technical><string>3</string><other-technical>GuqinLink@0.2;eid=E020005;</other-technical></technical></notations>
+        <lyric number="1" placement="above"><text>5</text></lyric>
+      </note>
+      <note id="N020006A">
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>240</duration><type>eighth</type>
+        <voice>1</voice><staff>1</staff>
+        <notations><technical><string>3</string><other-technical>GuqinLink@0.2;eid=E020006;</other-technical></technical></notations>
+        <lyric number="1" placement="above"><text>6</text></lyric>
+      </note>
+      <note id="N020007A">
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>240</duration><type>eighth</type>
+        <voice>1</voice><staff>1</staff>
+        <notations><technical><string>3</string><other-technical>GuqinLink@0.2;eid=E020007;</other-technical></technical></notations>
+        <lyric number="1" placement="above"><text>7</text></lyric>
+      </note>
+      <note id="N020008A">
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>240</duration><type>eighth</type>
+        <voice>1</voice><staff>1</staff>
+        <notations><technical><string>3</string><other-technical>GuqinLink@0.2;eid=E020008;</other-technical></technical></notations>
+        <lyric number="1" placement="above"><text>1</text></lyric>
+      </note>
+
+      <backup><duration>1920</duration></backup>
+
+      <!-- staff 2：先用统一的简式占位（真值字段仍由 GuqinJZP@0.2 承载） -->
+      <note id="N020001B"><pitch><step>C</step><octave>4</octave></pitch><duration>240</duration><type>eighth</type><voice>2</voice><staff>2</staff><notehead>none</notehead><notations><technical><other-technical>GuqinJZP@0.2;eid=E020001;form=simple;lex=abbr;hui_finger=散音;xian_finger=勾;xian=3;</other-technical></technical></notations><lyric number="1" placement="below"><text>散勾三</text></lyric></note>
+      <note id="N020002B"><pitch><step>D</step><octave>4</octave></pitch><duration>240</duration><type>eighth</type><voice>2</voice><staff>2</staff><notehead>none</notehead><notations><technical><other-technical>GuqinJZP@0.2;eid=E020002;form=simple;lex=abbr;hui_finger=散音;xian_finger=勾;xian=3;</other-technical></technical></notations><lyric number="1" placement="below"><text>散勾三</text></lyric></note>
+      <note id="N020003B"><pitch><step>E</step><octave>4</octave></pitch><duration>240</duration><type>eighth</type><voice>2</voice><staff>2</staff><notehead>none</notehead><notations><technical><other-technical>GuqinJZP@0.2;eid=E020003;form=simple;lex=abbr;hui_finger=散音;xian_finger=勾;xian=3;</other-technical></technical></notations><lyric number="1" placement="below"><text>散勾三</text></lyric></note>
+      <note id="N020004B"><pitch><step>F</step><octave>4</octave></pitch><duration>240</duration><type>eighth</type><voice>2</voice><staff>2</staff><notehead>none</notehead><notations><technical><other-technical>GuqinJZP@0.2;eid=E020004;form=simple;lex=abbr;hui_finger=散音;xian_finger=勾;xian=3;</other-technical></technical></notations><lyric number="1" placement="below"><text>散勾三</text></lyric></note>
+      <note id="N020005B"><pitch><step>G</step><octave>4</octave></pitch><duration>240</duration><type>eighth</type><voice>2</voice><staff>2</staff><notehead>none</notehead><notations><technical><other-technical>GuqinJZP@0.2;eid=E020005;form=simple;lex=abbr;hui_finger=散音;xian_finger=勾;xian=3;</other-technical></technical></notations><lyric number="1" placement="below"><text>散勾三</text></lyric></note>
+      <note id="N020006B"><pitch><step>A</step><octave>4</octave></pitch><duration>240</duration><type>eighth</type><voice>2</voice><staff>2</staff><notehead>none</notehead><notations><technical><other-technical>GuqinJZP@0.2;eid=E020006;form=simple;lex=abbr;hui_finger=散音;xian_finger=勾;xian=3;</other-technical></technical></notations><lyric number="1" placement="below"><text>散勾三</text></lyric></note>
+      <note id="N020007B"><pitch><step>B</step><octave>4</octave></pitch><duration>240</duration><type>eighth</type><voice>2</voice><staff>2</staff><notehead>none</notehead><notations><technical><other-technical>GuqinJZP@0.2;eid=E020007;form=simple;lex=abbr;hui_finger=散音;xian_finger=勾;xian=3;</other-technical></technical></notations><lyric number="1" placement="below"><text>散勾三</text></lyric></note>
+      <note id="N020008B"><pitch><step>C</step><octave>5</octave></pitch><duration>240</duration><type>eighth</type><voice>2</voice><staff>2</staff><notehead>none</notehead><notations><technical><other-technical>GuqinJZP@0.2;eid=E020008;form=simple;lex=abbr;hui_finger=散音;xian_finger=勾;xian=3;</other-technical></technical></notations><lyric number="1" placement="below"><text>散勾三</text></lyric></note>
+    </measure>
+  </part>
+</score-partwise>
+

@@ -45,6 +45,21 @@ def _get_note_duration(note: ET.Element) -> int:
     return int(t)
 
 
+def _pitch_to_dict(note: ET.Element) -> dict[str, Any] | None:
+    pitch = note.find("./pitch")
+    if pitch is None:
+        return None
+    step = pitch.findtext("./step")
+    octave = pitch.findtext("./octave")
+    alter = pitch.findtext("./alter")
+    if step is None or octave is None:
+        return None
+    out: dict[str, Any] = {"step": step, "octave": int(octave)}
+    if alter is not None:
+        out["alter"] = int(alter)
+    return out
+
+
 def _ensure_lyric_below(note: ET.Element) -> ET.Element:
     for lyric in note.findall("./lyric"):
         if lyric.get("placement") == "below":
@@ -339,8 +354,8 @@ def _collect_staff2_by_eid(measure: ET.Element) -> dict[str, ET.Element]:
         if other is None:
             raise ValueError("staff2 note 缺少 other-technical（GuqinJZP@0.2）")
         kvb = parse_kv_block(_strip(other.text))
-        if kvb.prefix != "GuqinJZP" or kvb.version != "0.2":
-            raise ValueError(f"staff2 other-technical 不是 GuqinJZP@0.2：{_strip(other.text)!r}")
+        if kvb.prefix != "GuqinJZP" or kvb.version not in ("0.2", "0.3"):
+            raise ValueError(f"staff2 other-technical 不是 GuqinJZP@0.2/@0.3：{_strip(other.text)!r}")
         eid = kvb.kv.get("eid")
         if eid is None:
             raise ValueError("GuqinJZP@0.2 缺少 eid")
@@ -392,13 +407,13 @@ def build_score_view(*, project_id: str, revision: str, musicxml_bytes: bytes) -
                 link_kv = parse_kv_block(_strip(other.text)).kv
                 slot = link_kv.get("slot")
                 string = n.findtext(".//string")
-                pitch_step = n.findtext("./pitch/step")
-                pitch_octave = n.findtext("./pitch/octave")
+                is_rest = n.find("./rest") is not None
                 s1_notes.append(
                     {
                         "slot": slot,
                         "string": int(string) if string is not None else None,
-                        "pitch": {"step": pitch_step, "octave": int(pitch_octave)} if pitch_step and pitch_octave else None,
+                        "pitch": _pitch_to_dict(n),
+                        "is_rest": bool(is_rest),
                     }
                 )
 
@@ -436,7 +451,7 @@ def apply_edit_ops(*, musicxml_bytes: bytes, ops: list[EditOp]) -> bytes:
         raise ValueError("缺少 part")
 
     # 建立 eid → staff2 note 的索引（全曲范围）
-    staff2_notes: dict[str, tuple[ET.Element, ET.Element]] = {}
+    staff2_notes: dict[str, tuple[ET.Element, ET.Element, str]] = {}
     for m in part.findall("./measure"):
         for note in m.findall("./note"):
             if _get_staff(note) != "2":
@@ -445,21 +460,21 @@ def apply_edit_ops(*, musicxml_bytes: bytes, ops: list[EditOp]) -> bytes:
             if other is None:
                 continue
             kvb = parse_kv_block(_strip(other.text))
-            if kvb.prefix != "GuqinJZP" or kvb.version != "0.2":
+            if kvb.prefix != "GuqinJZP" or kvb.version not in ("0.2", "0.3"):
                 continue
             eid = kvb.kv.get("eid")
             if eid is None:
                 continue
             if eid in staff2_notes:
                 raise ValueError(f"全曲重复 eid（staff2）：{eid}")
-            staff2_notes[eid] = (note, other)
+            staff2_notes[eid] = (note, other, kvb.version)
 
     for op in ops:
         if op.op != "update_guqin_event":
             raise ValueError(f"未知 op：{op.op!r}")
         if op.eid not in staff2_notes:
             raise ValueError(f"找不到 eid 对应的 staff2 事件：{op.eid}")
-        note, other = staff2_notes[op.eid]
+        note, other, version = staff2_notes[op.eid]
         kvb = parse_kv_block(_strip(other.text))
         kv = dict(kvb.kv)
 
@@ -484,9 +499,8 @@ def apply_edit_ops(*, musicxml_bytes: bytes, ops: list[EditOp]) -> bytes:
         validate_jzp_text_parseable(jzp_text, lex=lex, token_sets=token_sets)
 
         # 写回 other-technical 与 lyric below（显示缓存）
-        other.text = dump_kv_block("GuqinJZP", "0.2", kv)
+        other.text = dump_kv_block("GuqinJZP", version, kv)
         lyric_text_el = _ensure_lyric_below(note)
         lyric_text_el.text = jzp_text
 
     return ET.tostring(root, encoding="utf-8", xml_declaration=True)
-

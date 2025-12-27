@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.1">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Guqin</part-name>
+    </score-part>
+  </part-list>
+
+  <part id="P1">
+    <measure number="1">
+      <print new-system="yes" />
+      <attributes>
+        <divisions>480</divisions>
+        <key>
+          <fifths>0</fifths>
+        </key>
+        <time>
+          <beats>4</beats>
+          <beat-type>4</beat-type>
+        </time>
+        <staves>2</staves>
+        <clef number="1">
+          <sign>jianpu</sign>
+        </clef>
+        <clef number="2">
+          <sign>TAB</sign>
+        </clef>
+      </attributes>
+
+      <!-- staff 1：简谱层（节奏/音高），每个事件用 eid 绑定到 staff 2 -->
+      <note id="N010001A">
+        <pitch>
+          <step>C</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>480</duration>
+        <type>quarter</type>
+        <voice>1</voice>
+        <staff>1</staff>
+        <notations>
+          <technical>
+            <other-technical>GuqinLink@0.2;eid=E000001</other-technical>
+          </technical>
+        </notations>
+        <lyric number="1" placement="above">
+          <text>1</text>
+        </lyric>
+      </note>
+
+      <note id="N010002A">
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>480</duration>
+        <type>quarter</type>
+        <voice>1</voice>
+        <staff>1</staff>
+        <notations>
+          <technical>
+            <other-technical>GuqinLink@0.2;eid=E000002</other-technical>
+          </technical>
+        </notations>
+        <lyric number="1" placement="above">
+          <text>2</text>
+        </lyric>
+      </note>
+
+      <note id="N010003A">
+        <pitch>
+          <step>E</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>480</duration>
+        <type>quarter</type>
+        <voice>1</voice>
+        <staff>1</staff>
+        <notations>
+          <technical>
+            <other-technical>GuqinLink@0.2;eid=E000003</other-technical>
+          </technical>
+        </notations>
+        <lyric number="1" placement="above">
+          <text>3</text>
+        </lyric>
+      </note>
+
+      <note id="N010004A">
+        <pitch>
+          <step>G</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>480</duration>
+        <type>quarter</type>
+        <voice>1</voice>
+        <staff>1</staff>
+        <notations>
+          <technical>
+            <other-technical>GuqinLink@0.2;eid=E000004</other-technical>
+          </technical>
+        </notations>
+        <lyric number="1" placement="above">
+          <text>5</text>
+        </lyric>
+      </note>
+
+      <backup>
+        <duration>1920</duration>
+      </backup>
+
+      <!-- staff 2：减字谱层（动作/指法），结构化字段为真值；jzp_text 为派生显示层 -->
+      <note id="Z010001">
+        <rest />
+        <duration>480</duration>
+        <type>quarter</type>
+        <voice>2</voice>
+        <staff>2</staff>
+        <notations>
+          <technical>
+            <other-technical>GuqinJZP@0.2;eid=E000001;lex=abbr;tech=散;xian=3</other-technical>
+          </technical>
+        </notations>
+        <lyric number="1" placement="below">
+          <text>散三</text>
+        </lyric>
+      </note>
+
+      <note id="Z010002">
+        <rest />
+        <duration>480</duration>
+        <type>quarter</type>
+        <voice>2</voice>
+        <staff>2</staff>
+        <notations>
+          <technical>
+            <other-technical>GuqinJZP@0.2;eid=E000002;lex=abbr;tech=按;hui=7;fen=0;left=大指;right=勾;xian=4</other-technical>
+          </technical>
+        </notations>
+        <lyric number="1" placement="below">
+          <text>大七勾四</text>
+        </lyric>
+      </note>
+
+      <note id="Z010003">
+        <rest />
+        <duration>480</duration>
+        <type>quarter</type>
+        <voice>2</voice>
+        <staff>2</staff>
+        <notations>
+          <technical>
+            <other-technical>GuqinJZP@0.2;eid=E000003;lex=abbr;tech=泛;hui=7;fen=0;right=抹;xian=5</other-technical>
+          </technical>
+        </notations>
+        <lyric number="1" placement="below">
+          <text>泛七抹五</text>
+        </lyric>
+      </note>
+
+      <note id="Z010004">
+        <rest />
+        <duration>480</duration>
+        <type>quarter</type>
+        <voice>2</voice>
+        <staff>2</staff>
+        <notations>
+          <technical>
+            <other-technical>GuqinJZP@0.2;eid=E000004;lex=abbr;tech=按;hui=9;fen=6;left=名指;right=挑;xian=2</other-technical>
+          </technical>
+        </notations>
+        <lyric number="1" placement="below">
+          <text>名九六挑二</text>
+        </lyric>
+      </note>
+    </measure>
+  </part>
+</score-partwise>
+

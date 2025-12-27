@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.1">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Guqin</part-name>
+    </score-part>
+  </part-list>
+
+  <part id="P1">
+    <measure number="1">
+      <print new-system="yes" />
+      <attributes>
+        <divisions>480</divisions>
+        <key>
+          <fifths>0</fifths>
+        </key>
+        <time>
+          <beats>4</beats>
+          <beat-type>4</beat-type>
+        </time>
+        <staves>2</staves>
+        <clef number="1">
+          <sign>jianpu</sign>
+        </clef>
+        <clef number="2">
+          <sign>TAB</sign>
+        </clef>
+      </attributes>
+
+      <!-- staff 1：简谱层（节奏/音高），pitch 是“真时间线”用于导出与校验 -->
+      <note id="N010001A">
+        <pitch>
+          <step>C</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>480</duration>
+        <type>quarter</type>
+        <voice>1</voice>
+        <staff>1</staff>
+        <notations>
+          <technical>
+            <other-technical>GuqinLink@0.2;eid=E000001</other-technical>
+          </technical>
+        </notations>
+        <lyric number="1" placement="above">
+          <text>1</text>
+        </lyric>
+      </note>
+
+      <note id="N010002A">
+        <pitch>
+          <step>D</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>480</duration>
+        <type>quarter</type>
+        <voice>1</voice>
+        <staff>1</staff>
+        <notations>
+          <technical>
+            <other-technical>GuqinLink@0.2;eid=E000002</other-technical>
+          </technical>
+        </notations>
+        <lyric number="1" placement="above">
+          <text>2</text>
+        </lyric>
+      </note>
+
+      <note>
+        <rest />
+        <duration>960</duration>
+        <type>half</type>
+        <voice>1</voice>
+        <staff>1</staff>
+        <notations>
+          <technical>
+            <other-technical>GuqinLink@0.2;eid=E000003</other-technical>
+          </technical>
+        </notations>
+      </note>
+
+      <backup>
+        <duration>1920</duration>
+      </backup>
+
+      <!-- staff 2：减字谱层（指法真值）；v0.3 引入 sound/pos_ratio 用于可确定的 pitch 推导 -->
+      <note id="Z010001">
+        <rest />
+        <duration>480</duration>
+        <type>quarter</type>
+        <voice>2</voice>
+        <staff>2</staff>
+        <notations>
+          <technical>
+            <other-technical>GuqinJZP@0.3;eid=E000001;form=simple;lex=abbr;hui_finger=散音;xian_finger=勾;xian=3;sound=open</other-technical>
+          </technical>
+        </notations>
+        <lyric number="1" placement="below">
+          <text>散勾三</text>
+        </lyric>
+      </note>
+
+      <note id="Z010002">
+        <rest />
+        <duration>480</duration>
+        <type>quarter</type>
+        <voice>2</voice>
+        <staff>2</staff>
+        <notations>
+          <technical>
+            <!-- 以 demo tuning：string3=C4=60 为例，D4=62 对应 d=2 -> pos_ratio = 1 - 2^(-2/12) = 0.109101... -->
+            <other-technical>GuqinJZP@0.3;eid=E000002;form=simple;lex=abbr;hui_finger=大指;hui=7;xian_finger=勾;xian=3;sound=pressed;pos_ratio=0.10910128185966073</other-technical>
+          </technical>
+        </notations>
+        <lyric number="1" placement="below">
+          <text>大七勾三</text>
+        </lyric>
+      </note>
+
+      <note>
+        <rest />
+        <duration>960</duration>
+        <type>half</type>
+        <voice>2</voice>
+        <staff>2</staff>
+        <notations>
+          <technical>
+            <other-technical>GuqinJZP@0.3;eid=E000003;form=marker;marker=少息</other-technical>
+          </technical>
+        </notations>
+        <lyric number="1" placement="below">
+          <text>少息</text>
+        </lyric>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

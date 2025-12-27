@@ -12,12 +12,124 @@ v0.2 的核心目标是：**做到“我们定义的减字谱读法语法”能�
 > 重要设计选择（以你最新指示为准）
 > - **结构化字段为真值**（对应 `jianzipu` 的语法树结构，可编辑、可校验）
 > - `jzp_text` 只是**可重复生成**的派生显示层（缓存/渲染输入），前端不直接编辑
+> - **显示层短期取舍（写死）**：减字谱可视化短期先用 `jzp_text` 这种“不损失含义的文本表示”（例如 `散勾三`），不优先做字体/SVG 字形渲染；字形渲染未来只作为显示层升级，不改变真值与编辑协议
 
 ---
 
 ## 0. 规范性语言
 
 本文档使用 MUST / SHOULD / MAY 表示强制/建议/可选约束。
+
+---
+
+## 0.1 单一真源（Single Source of Truth）与派生物边界（MUST）
+
+### 0.1.1 核心原则（写死）
+
+- 本项目的**唯一真源** MUST 始终是 **MusicXML 文件本身**（`score-partwise 4.1` + 本 Profile 的扩展约定）。
+- 禁止引入任何“第二真源”（例如独立 IR/数据库里另存一份更完整的结构，然后把 MusicXML 当导出物）。  
+  允许存在内部数据结构/缓存，但它们 MUST 视为 **派生物**，并且必须能够回写还原到同一份 MusicXML 真源。
+- 当存在语义冲突时（例如 UI 缓存与 MusicXML 不一致），系统 MUST 以 MusicXML 真源为准，并且 MUST 显式报错/触发重建，不允许静默吞掉差异。
+
+### 0.1.2 派生物的无损/有损分类（必须明确声明）
+
+我们把“从真源派生出来的东西”分成两类，任何导入/导出/转换都必须明确标注属于哪一类：
+
+**A. 无损派生（lossless, round-trip supported）**
+
+指派生物能够做到“从 MusicXML 真源解析得到、并能再写回生成等价 MusicXML”，满足 round-trip：
+
+- MusicXML → 派生物 → MusicXML 后，必须满足 Profile 约束，并且关键字段保持一致（至少包括：事件身份 `eid`、节奏时值、结构化指法字段、必要的扩展槽位内容）。
+- 无损派生物的实现 MUST：
+  - 显式携带 Profile 版本号（例如 `GuqinJZP@0.2`）
+  - 不得丢弃未识别字段：遇到未知 key/扩展块时，必须保留（原样回写）或直接失败；禁止“尽量解析一下然后忽略剩余部分”
+
+典型：我们内部为了计算/渲染/编辑而生成的 JSON/对象视图（如事件级 score view），只要能够严格 round-trip，就属于无损派生。
+
+**B. 有损派生（lossy, export-only）**
+
+指派生物天然无法承载 MusicXML + Guqin 扩展的全部语义，因此只能作为导出物，不承诺可逆回写：
+
+- MIDI：会丢失谱面结构（小节/连线/标注）、古琴指法语义、排版信息等
+- 音频：更是只保留声音结果，无法回写
+- 其他格式：只有当目标格式能完整承载本 Profile 的全部语义（或我们定义了等价的扩展承载位）时，才允许宣称无损；否则必须声明为有损
+
+系统行为（学术级要求）：
+- 若用户请求把有损派生物“再转换回真源”，系统 MUST 明确拒绝或明确标注信息丢失点；不得假装无损。
+
+---
+
+## 0.2 音高真值与 stage1/stage2 就绪条件（MUST）
+
+本项目允许“输入只有简谱度数”的形态，但 **stage1（音位候选枚举）与 stage2（指法优化）** 的硬前提是：MusicXML 真源中能够给出每个事件的**绝对音高**（用于枚举可行音位）。
+
+因此约定（写死）：
+
+- MusicXML 进入任何推荐/优化/回放/导出链路前，MUST 处于 **pitch-resolved** 状态：
+  - staff 1 的事件必须能够提供绝对 pitch（例如 `<pitch><step>..</step><alter>..</alter><octave>..</octave></pitch>`）
+  - 若导入阶段只有“简谱度数”，则系统 MUST 要求用户补齐调性/主音/移调等信息，并把绝对 pitch **编译落地写入 MusicXML staff1**（真源内落地，不另存第二真源）
+- 若当前处于 **pitch-unresolved** 状态（无法从真源得到绝对 pitch），则 stage1/stage2/MIDI 导出 MUST 明确失败（正确地失败，不猜 key/pitch）。
+
+---
+
+## 0.3 连续位置真值（Profile v0.3 方向，写死的设计选择）
+
+为了支持基于物理/音律的一致建模（音位枚举、换把成本、滑音/吟猱连续参数等），Profile 下一版（v0.3）将引入“连续按弦位置”真值字段。
+
+设计选择（写死）：
+
+- 连续位置真值以 `pos_ratio` 为主（物理/可优化/可回归）
+- `hui_real` 仅作为派生显示/缓存层（可重复生成并校验），不作为底层真值
+
+注：v0.2 仍以“谱字语法树真值”为优先目标；`pos_ratio` 将在 v0.3 以最小增量方式引入。
+
+### 0.3.1 v0.3 的最小增量字段（MUST）
+
+v0.3 的目标不是推翻 v0.2 的“谱字语法树真值”，而是在保持 v0.2 字段体系的前提下，补齐“可确定计算”所需的最小真值，从而支持：
+
+- **古琴指法 → pitch（1→1）**：用于一致性检查、反向编译、导出链路
+- **pitch → 古琴候选（1→多）**：stage1 候选枚举/优化（以 `pos_ratio` 为连续真值）
+
+因此我们定义 `GuqinJZP@0.3` 为对 `GuqinJZP@0.2` 的**向后兼容扩展**：
+
+- v0.2 的结构化字段（`form/lex/...`）仍然存在并决定 `jzp_text`（显示层）
+- v0.3 额外字段用于“确定 pitch 计算与一致性检查”
+
+#### A) `form=simple` 的 v0.3 字段
+
+新增字段：
+
+- `sound`：MUST；`open` / `pressed` / `harmonic`
+
+约束：
+
+- `sound=open`：
+  - MUST 不包含 `pos_ratio`
+  - pitch 由 `xian`（弦序）与项目 `tuning` 确定
+- `sound=pressed`：
+  - 若 `xian` 长度为 1：MUST 提供 `pos_ratio`
+  - 若 `xian` 长度为 2：MUST 提供 `pos_ratio_1` 与 `pos_ratio_2`（分别对应 `GuqinLink.slot=1/2`）
+- `sound=harmonic`：
+  - MUST 提供 `harmonic_n`（自然泛音阶数）
+  - `harmonic_k` MAY 提供（用于显示/定位节点；不影响 pitch）
+  - 多弦（`xian` 长度为 2）时，目前约定两弦共享同一个 `harmonic_n`（更复杂情况需另行扩展）
+
+`pos_ratio` 的定义（写死，与 stage1 保持一致）：
+
+- `pos_ratio = 1 - 2^(-d/12)`（12-TET 下按音距离开弦的 semitone 数 `d` 对应的弦长比例）
+- `d = -12 * log2(1 - pos_ratio)`（用于从 `pos_ratio` 反推 semitone，再映射到离散 pitch）
+
+#### B) `form=complex` 的 v0.3 字段
+
+complex 是“一个谱字对应多个同时音”的结构，因此 v0.3 需要对子式分别提供真值：
+
+- `l_sound` / `r_sound`：MUST；`open/pressed/harmonic`
+- 若 `*_sound=pressed`：MUST 提供 `l_pos_ratio` / `r_pos_ratio`
+- 若 `*_sound=harmonic`：MUST 提供 `l_harmonic_n` / `r_harmonic_n`（`*_harmonic_k` MAY）
+
+slot 绑定规则仍沿用 v0.2：staff1 chord 的两个 `<note>` 必须标注 `GuqinLink.slot=L/R`。
+
+> 现阶段实现提示：v0.2 文件仍可正常工作，但 “按音/泛音的 pitch 一致性检查”只有在 v0.3 真值齐全时才能做到确定。
 
 ---
 
