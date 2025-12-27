@@ -7,6 +7,8 @@ export type ProjectScoreView = {
   revision: string;
   measures: Array<{
     number: string;
+    divisions: number | null;
+    time: { beats: number; beat_type: number } | null;
     events: Array<{
       eid: string;
       duration: number;
@@ -16,8 +18,15 @@ export type ProjectScoreView = {
   }>;
 };
 
-export function DualScoreView(props: { score: ProjectScoreView; className?: string }) {
+export function DualScoreView(props: {
+  score: ProjectScoreView;
+  className?: string;
+  showJianpu?: boolean;
+  showJzp?: boolean;
+}) {
   const score = props.score;
+  const showJianpu = props.showJianpu ?? true;
+  const showJzp = props.showJzp ?? true;
   return (
     <div className={cn("space-y-3", props.className)}>
       {score.measures.map((m) => (
@@ -27,14 +36,16 @@ export function DualScoreView(props: { score: ProjectScoreView; className?: stri
               小节 {m.number || "?"}
             </div>
             <div className="text-[11px] text-muted">
-              events: {m.events.length} · rev:{" "}
+              {m.time ? `${m.time.beats}/${m.time.beat_type}` : "—"} ·{" "}
+              {m.divisions != null ? `div=${m.divisions}` : "div=—"} · events:{" "}
+              {m.events.length} · rev:{" "}
               <span className="font-mono">{score.revision}</span>
             </div>
           </div>
 
           <div className="mt-3 flex flex-wrap gap-2">
             {m.events.map((e) => (
-              <EventCell key={e.eid} e={e} />
+              <EventCell key={e.eid} e={e} divisions={m.divisions} time={m.time} showJianpu={showJianpu} showJzp={showJzp} />
             ))}
           </div>
         </div>
@@ -44,25 +55,107 @@ export function DualScoreView(props: { score: ProjectScoreView; className?: stri
 }
 
 function EventCell(props: {
-  e: { eid: string; jianpu_text: string | null; jzp_text: string };
+  e: { eid: string; jianpu_text: string | null; jzp_text: string; duration: number };
+  divisions: number | null;
+  time: { beats: number; beat_type: number } | null;
+  showJianpu: boolean;
+  showJzp: boolean;
 }) {
   const e = props.e;
+  const rhythm = useJianpuRhythm(e.duration, props.divisions);
   return (
-    <div className="group w-[92px] rounded-xl border border-border bg-panel2 p-2">
+    <div className="group w-[112px] rounded-xl border border-border bg-panel2 p-2">
       <div className="flex items-start justify-between gap-2">
         <div className="text-[10px] font-mono text-muted">{e.eid}</div>
+        <div className="text-[10px] text-muted">{rhythm.label}</div>
       </div>
-      <div className="mt-2 rounded-lg border border-border bg-panel p-2">
-        <div className="text-[10px] font-medium text-muted">简谱</div>
-        <div className="mt-1 text-lg font-semibold leading-none tracking-tight">
-          {e.jianpu_text ?? "—"}
+      {props.showJianpu ? (
+        <div className="mt-2 rounded-lg border border-border bg-panel p-2">
+          <div className="text-[10px] font-medium text-muted">简谱</div>
+          <div className="mt-1 flex items-end justify-center gap-1">
+            <div className="text-2xl font-semibold leading-none tracking-tight">
+              {e.jianpu_text ?? "—"}
+            </div>
+            {rhythm.dot ? (
+              <div className="text-xl font-semibold leading-none">·</div>
+            ) : null}
+            {rhythm.dashCount > 0 ? (
+              <div className="ml-1 flex items-center gap-1">
+                {Array.from({ length: rhythm.dashCount }).map((_, i) => (
+                  <div key={i} className="h-[2px] w-3 rounded bg-muted/60" />
+                ))}
+              </div>
+            ) : null}
+          </div>
+          {rhythm.underlineCount > 0 ? (
+            <div className="mt-1 flex items-center justify-center">
+              <div className="flex flex-col items-center gap-[2px]">
+                {Array.from({ length: rhythm.underlineCount }).map((_, i) => (
+                  <div key={i} className="h-[2px] w-8 rounded bg-muted/70" />
+                ))}
+              </div>
+            </div>
+          ) : null}
         </div>
-      </div>
-      <div className="mt-2 rounded-lg border border-border bg-panel p-2">
-        <div className="text-[10px] font-medium text-muted">减字谱</div>
-        <div className="mt-1 text-sm font-medium leading-snug">{e.jzp_text}</div>
-      </div>
+      ) : null}
+
+      {props.showJzp ? (
+        <div className={cn("rounded-lg border border-border bg-panel p-2", props.showJianpu ? "mt-2" : "mt-2")}>
+          <div className="text-[10px] font-medium text-muted">减字谱</div>
+          <div className="mt-1 text-sm font-medium leading-snug">{e.jzp_text}</div>
+        </div>
+      ) : null}
     </div>
   );
 }
 
+function useJianpuRhythm(durationDivisions: number, divisionsPerQuarter: number | null): {
+  underlineCount: number;
+  dashCount: number;
+  dot: boolean;
+  label: string;
+} {
+  const dur = Number.isFinite(durationDivisions) ? Math.max(0, durationDivisions) : 0;
+  const div = divisionsPerQuarter ?? null;
+  if (!div || div <= 0 || dur <= 0) {
+    return { underlineCount: 0, dashCount: 0, dot: false, label: `dur=${dur}` };
+  }
+
+  const ratio = dur / div; // quarter=1
+  const eps = 1e-6;
+
+  type Base = { base: number; dot: boolean };
+  const candidates: Base[] = [];
+  for (let n = -6; n <= 4; n += 1) {
+    const base = 2 ** n;
+    candidates.push({ base, dot: false });
+    candidates.push({ base: base * 1.5, dot: true });
+  }
+  let best: Base | null = null;
+  let bestErr = Number.POSITIVE_INFINITY;
+  for (const c of candidates) {
+    const err = Math.abs(c.base - ratio);
+    if (err < bestErr) {
+      bestErr = err;
+      best = c;
+    }
+  }
+  if (!best || bestErr > 0.01 + eps) {
+    // 不属于常见时值（比如连音线合并后的奇怪值），直接展示数值
+    return { underlineCount: 0, dashCount: 0, dot: false, label: `dur=${dur}` };
+  }
+
+  const dotted = best.dot;
+  const base = dotted ? best.base / 1.5 : best.base;
+
+  let underlineCount = 0;
+  let dashCount = 0;
+  if (base >= 1) {
+    dashCount = Math.max(0, Math.round(base - 1));
+  } else {
+    underlineCount = Math.max(0, Math.round(Math.log2(1 / base)));
+  }
+
+  const label = dotted ? `${base}q.` : `${base}q`;
+  return { underlineCount, dashCount, dot: dotted, label };
+}

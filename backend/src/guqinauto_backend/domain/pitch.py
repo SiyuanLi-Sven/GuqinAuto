@@ -48,4 +48,3 @@ class MusicXmlPitch:
         pc = STEP_TO_SEMITONE[step] + int(self.alter)
         return int((self.octave + 1) * 12 + pc)
 
-

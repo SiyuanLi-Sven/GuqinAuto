@@ -30,6 +30,7 @@ def main() -> None:
         raise RuntimeError(f"找不到后端源码目录：{src_dir}")
 
     sys.path.insert(0, str(src_dir))
+    repo_root = backend_dir.parent
 
     parser = argparse.ArgumentParser(add_help=True)
     parser.add_argument("--host", default="127.0.0.1")
@@ -40,11 +41,19 @@ def main() -> None:
     if unknown:
         raise SystemExit(f"不支持的参数：{unknown!r}")
 
+    # --reload 默认会 watch 当前工作目录（通常是 repo root），这会导致前端 node_modules
+    # 之类的噪声文件频繁触发重载。这里把 watch 范围显式限定到后端源码目录。
+    reload_dirs = [str(src_dir), str(backend_dir)] if args.reload else None
+    # 如果用户从 repo 外部启动（极少见），补一个兜底，避免 watchfiles 报错。
+    if args.reload and not repo_root.exists():
+        reload_dirs = [str(src_dir)]
+
     uvicorn.run(
-        "guqinauto_backend.server:app",
+        "guqinauto_backend.api.server:app",
         host=args.host,
         port=args.port,
         reload=args.reload,
+        reload_dirs=reload_dirs,
         log_level=args.log_level,
     )
 

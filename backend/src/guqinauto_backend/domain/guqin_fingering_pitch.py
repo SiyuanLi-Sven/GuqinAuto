@@ -18,7 +18,7 @@ from math import log2
 from typing import Any, Literal
 
 from .pitch import MusicXmlPitch
-from .workspace import ProjectTuning
+from ..infra.workspace import ProjectTuning
 
 
 Sound = Literal["open", "pressed", "harmonic"]
@@ -337,4 +337,3 @@ def staff1_pitch_dict_to_midi(pitch: dict[str, Any] | None) -> int | None:
     alter = pitch.get("alter")
     alter_i = int(alter) if isinstance(alter, int) else 0
     return MusicXmlPitch(step=step, alter=alter_i, octave=octave).to_midi()
-

@@ -5,6 +5,7 @@ const items = [
   { href: "/", label: "项目" },
   { href: "/import", label: "导入" },
   { href: "/editor", label: "编辑器" },
+  { href: "/tools/musicxml-viewer", label: "工具" },
   { href: "/settings", label: "设置" },
 ];
 

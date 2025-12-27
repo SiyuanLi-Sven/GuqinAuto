@@ -1,0 +1,15 @@
+# GuqinAuto 后端（Python）最小依赖（只列“直接依赖”，不列派生依赖）。
+# 放宽这些依赖的版本, 大概率也没什么问题. 
+# 
+# 版本来自当前开发环境（Python 3.12）：
+#   - fastapi==0.115.0
+#   - uvicorn==0.30.0
+#   - pydantic==2.11.7
+#
+# 用法（示例）：
+#   pip install -r backend/requirements.txt
+
+fastapi==0.115.0
+uvicorn==0.30.0
+pydantic==2.11.7
+

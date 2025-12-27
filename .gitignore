@@ -28,7 +28,7 @@ env/
 # ---- 数据与日志 ----
 data/logs/
 data/temp/
-temp/
+temp/*
 !temp/check_no_references_usage.py
 !temp/validate_profile_v0_2.py
 !temp/backend_edit_try_v0_2.py
@@ -36,6 +36,7 @@ temp/
 !temp/backend_resolve_pitch_try.py
 !temp/backend_compile_pitch_from_jianpu_try.py
 !temp/backend_stage2_try.py
+!temp/test_mary_lamb_pipeline.py
 
 # ---- Node.js / Frontend ----
 node_modules/

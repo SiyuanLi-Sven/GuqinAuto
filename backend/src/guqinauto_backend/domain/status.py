@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from .musicxml_profile_v0_2 import ProjectScoreView
-from .workspace import ProjectTuning
+from ..infra.workspace import ProjectTuning
 from .guqin_fingering_pitch import derive_expected_pitches, staff1_pitch_dict_to_midi
 
 

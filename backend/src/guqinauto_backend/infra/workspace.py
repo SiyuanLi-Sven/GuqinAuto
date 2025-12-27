@@ -30,7 +30,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from .paths import examples_dir, workspace_root
+from ..utils.paths import examples_dir, workspace_root
 
 
 def _utc_now_iso() -> str:

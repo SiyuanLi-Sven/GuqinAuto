@@ -6,6 +6,7 @@ import { Tabs } from "@/components/ui/tabs";
 import { TopNav } from "@/components/app/top-nav";
 import { OsmdViewer } from "@/components/score/osmd-viewer";
 import { DualScoreView, ProjectScoreView } from "@/components/score/dual-score-view";
+import { parseMusicXmlToDualView } from "@/lib/musicxml/parse-dual-view";
 import { http, HttpError } from "@/lib/http";
 import { useEffect, useMemo, useState } from "react";
 
@@ -38,7 +39,7 @@ export function EditorShell(props: { projectId?: string | null }) {
       if (!res.ok) throw new Error(`加载内置示例失败：HTTP ${res.status}`);
       const xml = await res.text();
       setMusicxml(xml);
-      setScore(parseMusicXmlToDualView(xml));
+      setScore(parseMusicXmlToDualView(xml, { projectId: "builtin", revision: "builtin" }).view);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setLoadError(msg);
@@ -320,78 +321,4 @@ function InspectorCard(props: { title: string; body: string }) {
   );
 }
 
-function parseMusicXmlToDualView(xml: string): ProjectScoreView {
-  const doc = new DOMParser().parseFromString(xml, "application/xml");
-  const parserError = doc.getElementsByTagName("parsererror")[0];
-  if (parserError) {
-    throw new Error("MusicXML XML 解析失败（parsererror）");
-  }
-
-  const part = doc.getElementsByTagName("part")[0];
-  if (!part) throw new Error("MusicXML 缺少 <part>");
-
-  const measures = Array.from(part.getElementsByTagName("measure"));
-  const outMeasures: ProjectScoreView["measures"] = [];
-
-  for (const m of measures) {
-    const mNumber = m.getAttribute("number") ?? "";
-    const notes = Array.from(m.getElementsByTagName("note"));
-
-    const staff1Notes = notes.filter((n) => n.getElementsByTagName("staff")[0]?.textContent?.trim() === "1");
-    const staff2Notes = notes.filter((n) => n.getElementsByTagName("staff")[0]?.textContent?.trim() === "2");
-
-    const staff2ByEid = new Map<string, Element>();
-    for (const n of staff2Notes) {
-      const other = n.getElementsByTagName("other-technical")[0];
-      const text = other?.textContent?.trim() ?? "";
-      const mEid = /(?:^|;)eid=([^;]+)/.exec(text)?.[1];
-      if (!mEid) continue;
-      staff2ByEid.set(mEid, n);
-    }
-
-    const events: Array<{ eid: string; jianpu_text: string | null; jzp_text: string }> = [];
-    let currentEid: string | null = null;
-    let group: Element[] = [];
-
-    function flush() {
-      if (!currentEid) return;
-      const first = group[0];
-      const jianpuText =
-        Array.from(first.getElementsByTagName("lyric")).find((l) => l.getAttribute("placement") === "above")?.getElementsByTagName("text")[0]?.textContent?.trim() ??
-        null;
-
-      const staff2 = staff2ByEid.get(currentEid);
-      const jzpText =
-        (staff2
-          ? Array.from(staff2.getElementsByTagName("lyric")).find((l) => l.getAttribute("placement") === "below")?.getElementsByTagName("text")[0]?.textContent?.trim()
-          : null) ?? "（staff2 缺失）";
-
-      events.push({ eid: currentEid, jianpu_text: jianpuText, jzp_text: jzpText });
-    }
-
-    for (const n of staff1Notes) {
-      const other = n.getElementsByTagName("other-technical")[0];
-      const text = other?.textContent?.trim() ?? "";
-      const eid = /(?:^|;)eid=([^;]+)/.exec(text)?.[1];
-      if (!eid) continue;
-      if (currentEid === null) {
-        currentEid = eid;
-        group = [n];
-      } else if (eid === currentEid) {
-        group.push(n);
-      } else {
-        flush();
-        currentEid = eid;
-        group = [n];
-      }
-    }
-    flush();
-
-    outMeasures.push({
-      number: mNumber,
-      events: events.map((e) => ({ eid: e.eid, duration: 0, jzp_text: e.jzp_text, jianpu_text: e.jianpu_text })),
-    });
-  }
-
-  return { project_id: "builtin", revision: "builtin", measures: outMeasures };
-}
+// 解析器已抽到 lib：`src/lib/musicxml/parse-dual-view.ts`

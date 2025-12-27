@@ -224,4 +224,3 @@ def optimize_topk(
         )
 
     return solutions
-

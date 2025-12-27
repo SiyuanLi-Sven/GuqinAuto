@@ -19,13 +19,13 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from .musicxml_profile_v0_2 import EditOp, apply_edit_ops, build_score_view
-from .musicxml_staff1_pitch import PitchValue, Staff1PitchAssignment, apply_staff1_pitch_assignments
-from .jianpu_pitch_compiler import compile_degree_to_pitch, parse_degree
-from .pitch import MusicXmlPitch
-from .position_engine import PositionEngine, PositionEngineOptions
-from .status import compute_status, status_to_dict
-from .workspace import (
+from ..domain.musicxml_profile_v0_2 import EditOp, apply_edit_ops, build_score_view
+from ..domain.musicxml_staff1_pitch import PitchValue, Staff1PitchAssignment, apply_staff1_pitch_assignments
+from ..domain.jianpu_pitch_compiler import compile_degree_to_pitch, parse_degree
+from ..domain.pitch import MusicXmlPitch
+from ..engines.position_engine import PositionEngine, PositionEngineOptions
+from ..domain.status import compute_status, status_to_dict
+from ..infra.workspace import (
     ProjectMeta,
     ProjectTuning,
     create_project_from_example,
@@ -56,6 +56,7 @@ class CreateProjectRequest(BaseModel):
 
 class ApplyEditsRequest(BaseModel):
     base_revision: str
+    edit_source: str = Field(default="user", pattern="^(user|auto)$")
     message: str | None = None
     ops: list[dict[str, Any]]
 
@@ -181,7 +182,8 @@ def api_apply_edits(project_id: str, req: ApplyEditsRequest) -> dict[str, Any]:
                 raise ValueError("op 缺少 changes dict")
             parsed_ops.append(EditOp(op="update_guqin_event", eid=eid, changes={str(k): str(v) for k, v in changes.items()}))
 
-        new_xml_bytes = apply_edit_ops(musicxml_bytes=xml_bytes, ops=parsed_ops)
+        # 写回元数据：区分“系统生成初稿(auto)”与“用户改动(user)”
+        new_xml_bytes = apply_edit_ops(musicxml_bytes=xml_bytes, ops=parsed_ops, edit_source=req.edit_source)  # type: ignore[arg-type]
         new_meta = save_new_revision(
             project_id=project_id,
             base_revision=meta.current_revision,
@@ -431,7 +433,7 @@ def api_stage2(project_id: str, req: Stage2Request) -> dict[str, Any]:
     # 复用 stage1 的输出结构作为输入图
     stage1 = api_stage1(project_id, Stage1Request(base_revision=req.base_revision, tuning=req.tuning, options=req.stage1_options))
 
-    from .stage2_optimizer import Lock, Weights, optimize_topk
+    from ..engines.stage2_optimizer import Lock, Weights, optimize_topk
 
     locks = [Lock(eid=l.eid, fields=l.fields) for l in req.locks]
     weights = Weights(

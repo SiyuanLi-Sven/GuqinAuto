@@ -89,4 +89,3 @@ def compile_degree_to_pitch(*, degree: int, tonic: MusicXmlPitch, mode: Mode, oc
         )
 
     return CompiledPitch(step=target_step, alter=alter, octave=target_octave)
-

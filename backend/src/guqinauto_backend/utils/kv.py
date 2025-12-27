@@ -61,4 +61,3 @@ def dump_kv_block(prefix: str, version: str, kv: dict[str, str]) -> str:
             raise ValueError(f"非法 KV：{k}={v!r}")
         parts.append(f"{k}={v}")
     return ";".join(parts) + ";"
-

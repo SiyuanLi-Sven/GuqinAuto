@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from typing import Any
 import xml.etree.ElementTree as ET
 
-from .kv import parse_kv_block
+from ..utils.kv import parse_kv_block
 
 
 def _strip(text: str | None) -> str:
@@ -127,4 +127,3 @@ def apply_staff1_pitch_assignments(*, musicxml_bytes: bytes, assignments: list[S
         _set_note_pitch(note, a.pitch)
 
     return ET.tostring(root, encoding="utf-8", xml_declaration=True)
-

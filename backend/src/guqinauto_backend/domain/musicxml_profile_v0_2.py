@@ -19,11 +19,12 @@ import xml.etree.ElementTree as ET
 
 from guqinjzp.jianzipu_text import JianzipuTokenSets, parse_puzi_text
 
-from .kv import KVBlock, dump_kv_block, parse_kv_block
-from .paths import find_repo_root
+from ..utils.kv import KVBlock, dump_kv_block, parse_kv_block
+from ..utils.paths import find_repo_root
 
 
 Lex = Literal["abbr", "ortho"]
+EditSource = Literal["auto", "user"]
 
 
 def _strip(text: str | None) -> str:
@@ -188,6 +189,14 @@ def render_jzp_text_from_kv(kv: dict[str, str], token_sets: JianzipuTokenSets) -
     if lex not in ("abbr", "ortho"):
         raise ValueError(f"lex 非法：{lex!r}")
 
+    # 元数据字段（不参与 jzp_text 的生成，但必须合法；用于区分“用户改过/没改过”与“当前真值来源”）。
+    truth_src = kv.get("truth_src")
+    if truth_src is not None and truth_src not in ("auto", "user"):
+        raise ValueError(f"truth_src 非法（期望 auto/user）：{truth_src!r}")
+    user_touched = kv.get("user_touched")
+    if user_touched is not None and user_touched not in ("0", "1"):
+        raise ValueError(f"user_touched 非法（期望 '0'/'1'）：{user_touched!r}")
+
     def ensure_in(token: str, allowed: frozenset[str], name: str) -> None:
         if token not in allowed:
             raise ValueError(f"{name} 不在 token 规范内：{token!r}")
@@ -293,8 +302,18 @@ class ProjectScoreEvent:
 
 
 @dataclass(frozen=True)
+class ProjectScoreTime:
+    """小节拍号（time signature）。"""
+
+    beats: int
+    beat_type: int
+
+
+@dataclass(frozen=True)
 class ProjectScoreMeasure:
     number: str
+    divisions: int | None
+    time: ProjectScoreTime | None
     events: list[ProjectScoreEvent]
 
 
@@ -373,8 +392,22 @@ def build_score_view(*, project_id: str, revision: str, musicxml_bytes: bytes) -
         raise ValueError("缺少 part")
 
     measures: list[ProjectScoreMeasure] = []
+    cur_divisions: int | None = None
+    cur_time: ProjectScoreTime | None = None
     for m in part.findall("./measure"):
         m_no = m.get("number") or ""
+
+        # MusicXML 的 attributes 可以出现在任意小节；缺省时沿用上一小节的配置。
+        attr = m.find("./attributes")
+        if attr is not None:
+            div_t = _strip(attr.findtext("./divisions"))
+            if div_t:
+                cur_divisions = int(div_t)
+            beats_t = _strip(attr.findtext("./time/beats"))
+            beat_type_t = _strip(attr.findtext("./time/beat-type"))
+            if beats_t and beat_type_t:
+                cur_time = ProjectScoreTime(beats=int(beats_t), beat_type=int(beat_type_t))
+
         staff1_events = _collect_staff1_events(m)
         staff2_map = _collect_staff2_by_eid(m)
 
@@ -428,7 +461,7 @@ def build_score_view(*, project_id: str, revision: str, musicxml_bytes: bytes) -
                 )
             )
 
-        measures.append(ProjectScoreMeasure(number=m_no, events=events))
+        measures.append(ProjectScoreMeasure(number=m_no, divisions=cur_divisions, time=cur_time, events=events))
 
     return ProjectScoreView(project_id=project_id, revision=revision, measures=measures)
 
@@ -443,7 +476,7 @@ class EditOp:
     changes: dict[str, str]
 
 
-def apply_edit_ops(*, musicxml_bytes: bytes, ops: list[EditOp]) -> bytes:
+def apply_edit_ops(*, musicxml_bytes: bytes, ops: list[EditOp], edit_source: EditSource = "user") -> bytes:
     token_sets = load_token_sets_from_repo()
     root = ET.fromstring(musicxml_bytes)
     part = root.find("./part")
@@ -486,6 +519,17 @@ def apply_edit_ops(*, musicxml_bytes: bytes, ops: list[EditOp]) -> bytes:
             if k == "eid":
                 continue
             kv[k] = v
+
+        # 补齐/更新元数据（不影响谱字读法生成）：
+        # - truth_src：当前真值来源（auto/user）
+        # - user_touched：是否“曾被用户改过”（单调：一旦为 1，就不允许回到 0）
+        kv["truth_src"] = edit_source
+        if edit_source == "user":
+            kv["user_touched"] = "1"
+        else:
+            if kv.get("user_touched") not in ("0", "1"):
+                kv["user_touched"] = "0"
+            # 若已为 1，则保持 1（单调）
 
         # 必填检查
         if kv.get("eid") != op.eid:

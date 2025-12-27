@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.1">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Guqin</part-name>
+    </score-part>
+  </part-list>
+
+  <part id="P1">
+    <measure number="1">
+      <print new-system="yes" />
+      <attributes>
+        <divisions>480</divisions>
+        <key>
+          <fifths>0</fifths>
+        </key>
+        <time>
+          <beats>4</beats>
+          <beat-type>4</beat-type>
+        </time>
+        <staves>2</staves>
+        <clef number="1">
+          <sign>jianpu</sign>
+        </clef>
+        <clef number="2">
+          <sign>TAB</sign>
+        </clef>
+      </attributes>
+
+      <!--
+        Mary Had a Little Lamb（玛丽有只小小羊）输入基准：
+        - staff1：绝对音高 + 节奏（简谱度数作为 lyric@above，仅作显示/可用于反向编译）
+        - staff2：GuqinJZP@0.3 暂时写“统一占位”（散勾三），用于测试一致性检查/推荐写回
+        - 调弦建议：demo_g_a_c_d_e_g_a（G3 A3 C4 D4 E4 G4 A4）
+      -->
+
+      <!-- staff 1 -->
+      <note id="N000001A">
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>480</duration><type>quarter</type>
+        <voice>1</voice><staff>1</staff>
+        <notations><technical><string>5</string><other-technical>GuqinLink@0.2;eid=E000001;</other-technical></technical></notations>
+        <lyric number="1" placement="above"><text>3</text></lyric>
+      </note>
+      <note id="N000002A">
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <duration>480</duration><type>quarter</type>
+        <voice>1</voice><staff>1</staff>
+        <notations><technical><string>4</string><other-technical>GuqinLink@0.2;eid=E000002;</other-technical></technical></notations>
+        <lyric number="1" placement="above"><text>2</text></lyric>
+      </note>
+      <note id="N000003A">
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>480</duration><type>quarter</type>
+        <voice>1</voice><staff>1</staff>
+        <notations><technical><string>3</string><other-technical>GuqinLink@0.2;eid=E000003;</other-technical></technical></notations>
+        <lyric number="1" placement="above"><text>1</text></lyric>
+      </note>
+      <note id="N000004A">
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <duration>480</duration><type>quarter</type>
+        <voice>1</voice><staff>1</staff>
+        <notations><technical><string>4</string><other-technical>GuqinLink@0.2;eid=E000004;</other-technical></technical></notations>
+        <lyric number="1" placement="above"><text>2</text></lyric>
+      </note>
+
+      <backup><duration>1920</duration></backup>
+
+      <!-- staff 2（占位：统一写“散勾三”，方便测试一致性警告与推荐写回） -->
+      <note id="N000001B"><pitch><step>E</step><octave>4</octave></pitch><duration>480</duration><type>quarter</type><voice>2</voice><staff>2</staff><notehead>none</notehead><notations><technical><other-technical>GuqinJZP@0.3;eid=E000001;form=simple;lex=abbr;hui_finger=散音;xian_finger=勾;xian=3;</other-technical></technical></notations><lyric number="1" placement="below"><text>散勾三</text></lyric></note>
+      <note id="N000002B"><pitch><step>D</step><octave>4</octave></pitch><duration>480</duration><type>quarter</type><voice>2</voice><staff>2</staff><notehead>none</notehead><notations><technical><other-technical>GuqinJZP@0.3;eid=E000002;form=simple;lex=abbr;hui_finger=散音;xian_finger=勾;xian=3;</other-technical></technical></notations><lyric number="1" placement="below"><text>散勾三</text></lyric></note>
+      <note id="N000003B"><pitch><step>C</step><octave>4</octave></pitch><duration>480</duration><type>quarter</type><voice>2</voice><staff>2</staff><notehead>none</notehead><notations><technical><other-technical>GuqinJZP@0.3;eid=E000003;form=simple;lex=abbr;hui_finger=散音;xian_finger=勾;xian=3;</other-technical></technical></notations><lyric number="1" placement="below"><text>散勾三</text></lyric></note>
+      <note id="N000004B"><pitch><step>D</step><octave>4</octave></pitch><duration>480</duration><type>quarter</type><voice>2</voice><staff>2</staff><notehead>none</notehead><notations><technical><other-technical>GuqinJZP@0.3;eid=E000004;form=simple;lex=abbr;hui_finger=散音;xian_finger=勾;xian=3;</other-technical></technical></notations><lyric number="1" placement="below"><text>散勾三</text></lyric></note>
+    </measure>
+
+    <measure number="2">
+      <note id="N000005A">
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>480</duration><type>quarter</type>
+        <voice>1</voice><staff>1</staff>
+        <notations><technical><string>5</string><other-technical>GuqinLink@0.2;eid=E000005;</other-technical></technical></notations>
+        <lyric number="1" placement="above"><text>3</text></lyric>
+      </note>
+      <note id="N000006A">
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>480</duration><type>quarter</type>
+        <voice>1</voice><staff>1</staff>
+        <notations><technical><string>5</string><other-technical>GuqinLink@0.2;eid=E000006;</other-technical></technical></notations>
+        <lyric number="1" placement="above"><text>3</text></lyric>
+      </note>
+      <note id="N000007A">
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>960</duration><type>half</type>
+        <voice>1</voice><staff>1</staff>
+        <notations><technical><string>5</string><other-technical>GuqinLink@0.2;eid=E000007;</other-technical></technical></notations>
+        <lyric number="1" placement="above"><text>3</text></lyric>
+      </note>
+
+      <backup><duration>1920</duration></backup>
+      <note id="N000005B"><pitch><step>E</step><octave>4</octave></pitch><duration>480</duration><type>quarter</type><voice>2</voice><staff>2</staff><notehead>none</notehead><notations><technical><other-technical>GuqinJZP@0.3;eid=E000005;form=simple;lex=abbr;hui_finger=散音;xian_finger=勾;xian=3;</other-technical></technical></notations><lyric number="1" placement="below"><text>散勾三</text></lyric></note>
+      <note id="N000006B"><pitch><step>E</step><octave>4</octave></pitch><duration>480</duration><type>quarter</type><voice>2</voice><staff>2</staff><notehead>none</notehead><notations><technical><other-technical>GuqinJZP@0.3;eid=E000006;form=simple;lex=abbr;hui_finger=散音;xian_finger=勾;xian=3;</other-technical></technical></notations><lyric number="1" placement="below"><text>散勾三</text></lyric></note>
+      <note id="N000007B"><pitch><step>E</step><octave>4</octave></pitch><duration>960</duration><type>half</type><voice>2</voice><staff>2</staff><notehead>none</notehead><notations><technical><other-technical>GuqinJZP@0.3;eid=E000007;form=simple;lex=abbr;hui_finger=散音;xian_finger=勾;xian=3;</other-technical></technical></notations><lyric number="1" placement="below"><text>散勾三</text></lyric></note>
+    </measure>
+
+    <measure number="3">
+      <note id="N000008A">
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <duration>480</duration><type>quarter</type>
+        <voice>1</voice><staff>1</staff>
+        <notations><technical><string>4</string><other-technical>GuqinLink@0.2;eid=E000008;</other-technical></technical></notations>
+        <lyric number="1" placement="above"><text>2</text></lyric>
+      </note>
+      <note id="N000009A">
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <duration>480</duration><type>quarter</type>
+        <voice>1</voice><staff>1</staff>
+        <notations><technical><string>4</string><other-technical>GuqinLink@0.2;eid=E000009;</other-technical></technical></notations>
+        <lyric number="1" placement="above"><text>2</text></lyric>
+      </note>
+      <note id="N000010A">
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <duration>960</duration><type>half</type>
+        <voice>1</voice><staff>1</staff>
+        <notations><technical><string>4</string><other-technical>GuqinLink@0.2;eid=E000010;</other-technical></technical></notations>
+        <lyric number="1" placement="above"><text>2</text></lyric>
+      </note>
+
+      <backup><duration>1920</duration></backup>
+      <note id="N000008B"><pitch><step>D</step><octave>4</octave></pitch><duration>480</duration><type>quarter</type><voice>2</voice><staff>2</staff><notehead>none</notehead><notations><technical><other-technical>GuqinJZP@0.3;eid=E000008;form=simple;lex=abbr;hui_finger=散音;xian_finger=勾;xian=3;</other-technical></technical></notations><lyric number="1" placement="below"><text>散勾三</text></lyric></note>
+      <note id="N000009B"><pitch><step>D</step><octave>4</octave></pitch><duration>480</duration><type>quarter</type><voice>2</voice><staff>2</staff><notehead>none</notehead><notations><technical><other-technical>GuqinJZP@0.3;eid=E000009;form=simple;lex=abbr;hui_finger=散音;xian_finger=勾;xian=3;</other-technical></technical></notations><lyric number="1" placement="below"><text>散勾三</text></lyric></note>
+      <note id="N000010B"><pitch><step>D</step><octave>4</octave></pitch><duration>960</duration><type>half</type><voice>2</voice><staff>2</staff><notehead>none</notehead><notations><technical><other-technical>GuqinJZP@0.3;eid=E000010;form=simple;lex=abbr;hui_finger=散音;xian_finger=勾;xian=3;</other-technical></technical></notations><lyric number="1" placement="below"><text>散勾三</text></lyric></note>
+    </measure>
+
+    <measure number="4">
+      <note id="N000011A">
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>480</duration><type>quarter</type>
+        <voice>1</voice><staff>1</staff>
+        <notations><technical><string>5</string><other-technical>GuqinLink@0.2;eid=E000011;</other-technical></technical></notations>
+        <lyric number="1" placement="above"><text>3</text></lyric>
+      </note>
+      <note id="N000012A">
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>480</duration><type>quarter</type>
+        <voice>1</voice><staff>1</staff>
+        <notations><technical><string>6</string><other-technical>GuqinLink@0.2;eid=E000012;</other-technical></technical></notations>
+        <lyric number="1" placement="above"><text>5</text></lyric>
+      </note>
+      <note id="N000013A">
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>960</duration><type>half</type>
+        <voice>1</voice><staff>1</staff>
+        <notations><technical><string>6</string><other-technical>GuqinLink@0.2;eid=E000013;</other-technical></technical></notations>
+        <lyric number="1" placement="above"><text>5</text></lyric>
+      </note>
+
+      <backup><duration>1920</duration></backup>
+      <note id="N000011B"><pitch><step>E</step><octave>4</octave></pitch><duration>480</duration><type>quarter</type><voice>2</voice><staff>2</staff><notehead>none</notehead><notations><technical><other-technical>GuqinJZP@0.3;eid=E000011;form=simple;lex=abbr;hui_finger=散音;xian_finger=勾;xian=3;</other-technical></technical></notations><lyric number="1" placement="below"><text>散勾三</text></lyric></note>
+      <note id="N000012B"><pitch><step>G</step><octave>4</octave></pitch><duration>480</duration><type>quarter</type><voice>2</voice><staff>2</staff><notehead>none</notehead><notations><technical><other-technical>GuqinJZP@0.3;eid=E000012;form=simple;lex=abbr;hui_finger=散音;xian_finger=勾;xian=3;</other-technical></technical></notations><lyric number="1" placement="below"><text>散勾三</text></lyric></note>
+      <note id="N000013B"><pitch><step>G</step><octave>4</octave></pitch><duration>960</duration><type>half</type><voice>2</voice><staff>2</staff><notehead>none</notehead><notations><technical><other-technical>GuqinJZP@0.3;eid=E000013;form=simple;lex=abbr;hui_finger=散音;xian_finger=勾;xian=3;</other-technical></technical></notations><lyric number="1" placement="below"><text>散勾三</text></lyric></note>
+    </measure>
+
+    <measure number="5">
+      <note id="N000014A">
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>480</duration><type>quarter</type>
+        <voice>1</voice><staff>1</staff>
+        <notations><technical><string>5</string><other-technical>GuqinLink@0.2;eid=E000014;</other-technical></technical></notations>
+        <lyric number="1" placement="above"><text>3</text></lyric>
+      </note>
+      <note id="N000015A">
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <duration>480</duration><type>quarter</type>
+        <voice>1</voice><staff>1</staff>
+        <notations><technical><string>4</string><other-technical>GuqinLink@0.2;eid=E000015;</other-technical></technical></notations>
+        <lyric number="1" placement="above"><text>2</text></lyric>
+      </note>
+      <note id="N000016A">
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>480</duration><type>quarter</type>
+        <voice>1</voice><staff>1</staff>
+        <notations><technical><string>3</string><other-technical>GuqinLink@0.2;eid=E000016;</other-technical></technical></notations>
+        <lyric number="1" placement="above"><text>1</text></lyric>
+      </note>
+      <note id="N000017A">
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <duration>480</duration><type>quarter</type>
+        <voice>1</voice><staff>1</staff>
+        <notations><technical><string>4</string><other-technical>GuqinLink@0.2;eid=E000017;</other-technical></technical></notations>
+        <lyric number="1" placement="above"><text>2</text></lyric>
+      </note>
+
+      <backup><duration>1920</duration></backup>
+      <note id="N000014B"><pitch><step>E</step><octave>4</octave></pitch><duration>480</duration><type>quarter</type><voice>2</voice><staff>2</staff><notehead>none</notehead><notations><technical><other-technical>GuqinJZP@0.3;eid=E000014;form=simple;lex=abbr;hui_finger=散音;xian_finger=勾;xian=3;</other-technical></technical></notations><lyric number="1" placement="below"><text>散勾三</text></lyric></note>
+      <note id="N000015B"><pitch><step>D</step><octave>4</octave></pitch><duration>480</duration><type>quarter</type><voice>2</voice><staff>2</staff><notehead>none</notehead><notations><technical><other-technical>GuqinJZP@0.3;eid=E000015;form=simple;lex=abbr;hui_finger=散音;xian_finger=勾;xian=3;</other-technical></technical></notations><lyric number="1" placement="below"><text>散勾三</text></lyric></note>
+      <note id="N000016B"><pitch><step>C</step><octave>4</octave></pitch><duration>480</duration><type>quarter</type><voice>2</voice><staff>2</staff><notehead>none</notehead><notations><technical><other-technical>GuqinJZP@0.3;eid=E000016;form=simple;lex=abbr;hui_finger=散音;xian_finger=勾;xian=3;</other-technical></technical></notations><lyric number="1" placement="below"><text>散勾三</text></lyric></note>
+      <note id="N000017B"><pitch><step>D</step><octave>4</octave></pitch><duration>480</duration><type>quarter</type><voice>2</voice><staff>2</staff><notehead>none</notehead><notations><technical><other-technical>GuqinJZP@0.3;eid=E000017;form=simple;lex=abbr;hui_finger=散音;xian_finger=勾;xian=3;</other-technical></technical></notations><lyric number="1" placement="below"><text>散勾三</text></lyric></note>
+    </measure>
+
+    <measure number="6">
+      <note id="N000018A">
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>480</duration><type>quarter</type>
+        <voice>1</voice><staff>1</staff>
+        <notations><technical><string>5</string><other-technical>GuqinLink@0.2;eid=E000018;</other-technical></technical></notations>
+        <lyric number="1" placement="above"><text>3</text></lyric>
+      </note>
+      <note id="N000019A">
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>480</duration><type>quarter</type>
+        <voice>1</voice><staff>1</staff>
+        <notations><technical><string>5</string><other-technical>GuqinLink@0.2;eid=E000019;</other-technical></technical></notations>
+        <lyric number="1" placement="above"><text>3</text></lyric>
+      </note>
+      <note id="N000020A">
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>480</duration><type>quarter</type>
+        <voice>1</voice><staff>1</staff>
+        <notations><technical><string>5</string><other-technical>GuqinLink@0.2;eid=E000020;</other-technical></technical></notations>
+        <lyric number="1" placement="above"><text>3</text></lyric>
+      </note>
+      <note id="N000021A">
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>480</duration><type>quarter</type>
+        <voice>1</voice><staff>1</staff>
+        <notations><technical><string>5</string><other-technical>GuqinLink@0.2;eid=E000021;</other-technical></technical></notations>
+        <lyric number="1" placement="above"><text>3</text></lyric>
+      </note>
+
+      <backup><duration>1920</duration></backup>
+      <note id="N000018B"><pitch><step>E</step><octave>4</octave></pitch><duration>480</duration><type>quarter</type><voice>2</voice><staff>2</staff><notehead>none</notehead><notations><technical><other-technical>GuqinJZP@0.3;eid=E000018;form=simple;lex=abbr;hui_finger=散音;xian_finger=勾;xian=3;</other-technical></technical></notations><lyric number="1" placement="below"><text>散勾三</text></lyric></note>
+      <note id="N000019B"><pitch><step>E</step><octave>4</octave></pitch><duration>480</duration><type>quarter</type><voice>2</voice><staff>2</staff><notehead>none</notehead><notations><technical><other-technical>GuqinJZP@0.3;eid=E000019;form=simple;lex=abbr;hui_finger=散音;xian_finger=勾;xian=3;</other-technical></technical></notations><lyric number="1" placement="below"><text>散勾三</text></lyric></note>
+      <note id="N000020B"><pitch><step>E</step><octave>4</octave></pitch><duration>480</duration><type>quarter</type><voice>2</voice><staff>2</staff><notehead>none</notehead><notations><technical><other-technical>GuqinJZP@0.3;eid=E000020;form=simple;lex=abbr;hui_finger=散音;xian_finger=勾;xian=3;</other-technical></technical></notations><lyric number="1" placement="below"><text>散勾三</text></lyric></note>
+      <note id="N000021B"><pitch><step>E</step><octave>4</octave></pitch><duration>480</duration><type>quarter</type><voice>2</voice><staff>2</staff><notehead>none</notehead><notations><technical><other-technical>GuqinJZP@0.3;eid=E000021;form=simple;lex=abbr;hui_finger=散音;xian_finger=勾;xian=3;</other-technical></technical></notations><lyric number="1" placement="below"><text>散勾三</text></lyric></note>
+    </measure>
+
+    <measure number="7">
+      <note id="N000022A">
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <duration>480</duration><type>quarter</type>
+        <voice>1</voice><staff>1</staff>
+        <notations><technical><string>4</string><other-technical>GuqinLink@0.2;eid=E000022;</other-technical></technical></notations>
+        <lyric number="1" placement="above"><text>2</text></lyric>
+      </note>
+      <note id="N000023A">
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <duration>480</duration><type>quarter</type>
+        <voice>1</voice><staff>1</staff>
+        <notations><technical><string>4</string><other-technical>GuqinLink@0.2;eid=E000023;</other-technical></technical></notations>
+        <lyric number="1" placement="above"><text>2</text></lyric>
+      </note>
+      <note id="N000024A">
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>480</duration><type>quarter</type>
+        <voice>1</voice><staff>1</staff>
+        <notations><technical><string>5</string><other-technical>GuqinLink@0.2;eid=E000024;</other-technical></technical></notations>
+        <lyric number="1" placement="above"><text>3</text></lyric>
+      </note>
+      <note id="N000025A">
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <duration>480</duration><type>quarter</type>
+        <voice>1</voice><staff>1</staff>
+        <notations><technical><string>4</string><other-technical>GuqinLink@0.2;eid=E000025;</other-technical></technical></notations>
+        <lyric number="1" placement="above"><text>2</text></lyric>
+      </note>
+
+      <backup><duration>1920</duration></backup>
+      <note id="N000022B"><pitch><step>D</step><octave>4</octave></pitch><duration>480</duration><type>quarter</type><voice>2</voice><staff>2</staff><notehead>none</notehead><notations><technical><other-technical>GuqinJZP@0.3;eid=E000022;form=simple;lex=abbr;hui_finger=散音;xian_finger=勾;xian=3;</other-technical></technical></notations><lyric number="1" placement="below"><text>散勾三</text></lyric></note>
+      <note id="N000023B"><pitch><step>D</step><octave>4</octave></pitch><duration>480</duration><type>quarter</type><voice>2</voice><staff>2</staff><notehead>none</notehead><notations><technical><other-technical>GuqinJZP@0.3;eid=E000023;form=simple;lex=abbr;hui_finger=散音;xian_finger=勾;xian=3;</other-technical></technical></notations><lyric number="1" placement="below"><text>散勾三</text></lyric></note>
+      <note id="N000024B"><pitch><step>E</step><octave>4</octave></pitch><duration>480</duration><type>quarter</type><voice>2</voice><staff>2</staff><notehead>none</notehead><notations><technical><other-technical>GuqinJZP@0.3;eid=E000024;form=simple;lex=abbr;hui_finger=散音;xian_finger=勾;xian=3;</other-technical></technical></notations><lyric number="1" placement="below"><text>散勾三</text></lyric></note>
+      <note id="N000025B"><pitch><step>D</step><octave>4</octave></pitch><duration>480</duration><type>quarter</type><voice>2</voice><staff>2</staff><notehead>none</notehead><notations><technical><other-technical>GuqinJZP@0.3;eid=E000025;form=simple;lex=abbr;hui_finger=散音;xian_finger=勾;xian=3;</other-technical></technical></notations><lyric number="1" placement="below"><text>散勾三</text></lyric></note>
+    </measure>
+
+    <measure number="8">
+      <note id="N000026A">
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>1920</duration><type>whole</type>
+        <voice>1</voice><staff>1</staff>
+        <notations><technical><string>3</string><other-technical>GuqinLink@0.2;eid=E000026;</other-technical></technical></notations>
+        <lyric number="1" placement="above"><text>1</text></lyric>
+      </note>
+
+      <backup><duration>1920</duration></backup>
+      <note id="N000026B"><pitch><step>C</step><octave>4</octave></pitch><duration>1920</duration><type>whole</type><voice>2</voice><staff>2</staff><notehead>none</notehead><notations><technical><other-technical>GuqinJZP@0.3;eid=E000026;form=simple;lex=abbr;hui_finger=散音;xian_finger=勾;xian=3;</other-technical></technical></notations><lyric number="1" placement="below"><text>散勾三</text></lyric></note>
+    </measure>
+  </part>
+</score-partwise>
+
