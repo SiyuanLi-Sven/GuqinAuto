@@ -12,7 +12,7 @@
 - 本仓库运行期禁止依赖 references/；本脚本也不读取 references/。
 
 运行：
-  python temp/backend_edit_try_v0_2.py
+  python scripts/backend_edit_try_v0_2.py
 """
 
 from __future__ import annotations

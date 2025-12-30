@@ -14,6 +14,12 @@ export type ProjectScoreView = {
       duration: number;
       jzp_text: string;
       jianpu_text: string | null;
+      staff2_kv?: Record<string, string>;
+      staff1_notes?: Array<{
+        slot?: string | null;
+        is_rest?: boolean;
+        pitch?: { step?: string; alter?: number; octave?: number } | null;
+      }>;
     }>;
   }>;
 };
@@ -23,6 +29,8 @@ export function DualScoreView(props: {
   className?: string;
   showJianpu?: boolean;
   showJzp?: boolean;
+  selectedEid?: string | null;
+  onSelectEid?: (eid: string) => void;
 }) {
   const score = props.score;
   const showJianpu = props.showJianpu ?? true;
@@ -45,7 +53,16 @@ export function DualScoreView(props: {
 
           <div className="mt-3 flex flex-wrap gap-2">
             {m.events.map((e) => (
-              <EventCell key={e.eid} e={e} divisions={m.divisions} time={m.time} showJianpu={showJianpu} showJzp={showJzp} />
+              <EventCell
+                key={e.eid}
+                e={e}
+                divisions={m.divisions}
+                time={m.time}
+                showJianpu={showJianpu}
+                showJzp={showJzp}
+                selected={props.selectedEid === e.eid}
+                onSelectEid={props.onSelectEid}
+              />
             ))}
           </div>
         </div>
@@ -55,16 +72,32 @@ export function DualScoreView(props: {
 }
 
 function EventCell(props: {
-  e: { eid: string; jianpu_text: string | null; jzp_text: string; duration: number };
+  e: {
+    eid: string;
+    jianpu_text: string | null;
+    jzp_text: string;
+    duration: number;
+    staff2_kv?: Record<string, string>;
+  };
   divisions: number | null;
   time: { beats: number; beat_type: number } | null;
   showJianpu: boolean;
   showJzp: boolean;
+  selected: boolean;
+  onSelectEid?: (eid: string) => void;
 }) {
   const e = props.e;
   const rhythm = useJianpuRhythm(e.duration, props.divisions);
+  const truth = summarizeGuqinTruth(e.staff2_kv);
   return (
-    <div className="group w-[112px] rounded-xl border border-border bg-panel2 p-2">
+    <button
+      type="button"
+      className={cn(
+        "group w-[112px] rounded-xl border bg-panel2 p-2 text-left transition",
+        props.selected ? "border-primary/60 ring-2 ring-primary/20" : "border-border hover:border-primary/40"
+      )}
+      onClick={() => props.onSelectEid?.(e.eid)}
+    >
       <div className="flex items-start justify-between gap-2">
         <div className="text-[10px] font-mono text-muted">{e.eid}</div>
         <div className="text-[10px] text-muted">{rhythm.label}</div>
@@ -103,10 +136,85 @@ function EventCell(props: {
         <div className={cn("rounded-lg border border-border bg-panel p-2", props.showJianpu ? "mt-2" : "mt-2")}>
           <div className="text-[10px] font-medium text-muted">减字谱</div>
           <div className="mt-1 text-sm font-medium leading-snug">{e.jzp_text}</div>
+          {truth ? (
+            <div className="mt-2 text-[10px] leading-snug text-muted whitespace-pre-wrap">
+              真值：{truth}
+            </div>
+          ) : null}
         </div>
       ) : null}
-    </div>
+    </button>
   );
+}
+
+function summarizeGuqinTruth(kv: Record<string, string> | undefined): string | null {
+  if (!kv) return null;
+  const form = kv.form;
+  if (form !== "simple" && form !== "complex") return null;
+
+  const fmt = (v: string | undefined) => {
+    if (v == null) return "—";
+    const n = Number(v);
+    if (Number.isFinite(n)) return String(Math.round(n * 1000) / 1000);
+    return v;
+  };
+
+  if (form === "simple") {
+    const sound = kv.sound;
+    const hasV03 =
+      sound != null ||
+      kv.pos_ratio != null ||
+      kv.harmonic_n != null ||
+      kv.harmonic_k != null ||
+      Object.keys(kv).some((k) => /^pos_ratio_[1-7]$/.test(k));
+    if (!hasV03) return null;
+
+    const xian = kv.xian ?? "—";
+    if (sound === "open") return `open · xian=${xian}`;
+    if (sound === "pressed") {
+      const pr = kv.pos_ratio;
+      const prs = Object.entries(kv)
+        .filter(([k]) => /^pos_ratio_[1-7]$/.test(k))
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([k, v]) => `${k}=${fmt(v)}`);
+      return prs.length ? `pressed · xian=${xian} · ${prs.join(" · ")}` : `pressed · xian=${xian} · pos_ratio=${fmt(pr)}`;
+    }
+    if (sound === "harmonic") {
+      const hn = kv.harmonic_n;
+      const hk = kv.harmonic_k;
+      const pr = kv.pos_ratio;
+      const extra = [
+        hn != null ? `n=${fmt(hn)}` : null,
+        hk != null ? `k=${fmt(hk)}` : null,
+        pr != null ? `pos_ratio=${fmt(pr)}` : null,
+      ].filter(Boolean);
+      return `harmonic · xian=${xian}${extra.length ? " · " + extra.join(" · ") : ""}`;
+    }
+    return `sound=${sound ?? "—"} · xian=${xian}`;
+  }
+
+  // complex
+  const hasV03 =
+    kv.l_sound != null ||
+    kv.l_pos_ratio != null ||
+    kv.l_harmonic_n != null ||
+    kv.r_sound != null ||
+    kv.r_pos_ratio != null ||
+    kv.r_harmonic_n != null;
+  if (!hasV03) return null;
+  const l = [
+    `L:${kv.l_sound ?? "—"}`,
+    kv.l_xian ? `xian=${kv.l_xian}` : null,
+    kv.l_sound === "pressed" ? `pos_ratio=${fmt(kv.l_pos_ratio)}` : null,
+    kv.l_sound === "harmonic" ? `n=${fmt(kv.l_harmonic_n)}` : null,
+  ].filter(Boolean);
+  const r = [
+    `R:${kv.r_sound ?? "—"}`,
+    kv.r_xian ? `xian=${kv.r_xian}` : null,
+    kv.r_sound === "pressed" ? `pos_ratio=${fmt(kv.r_pos_ratio)}` : null,
+    kv.r_sound === "harmonic" ? `n=${fmt(kv.r_harmonic_n)}` : null,
+  ].filter(Boolean);
+  return `${l.join(" · ")}\n${r.join(" · ")}`;
 }
 
 function useJianpuRhythm(durationDivisions: number, divisionsPerQuarter: number | null): {

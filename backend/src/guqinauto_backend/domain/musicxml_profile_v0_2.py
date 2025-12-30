@@ -21,6 +21,7 @@ from guqinjzp.jianzipu_text import JianzipuTokenSets, parse_puzi_text
 
 from ..utils.kv import KVBlock, dump_kv_block, parse_kv_block
 from ..utils.paths import find_repo_root
+from .technique_meta import TechniqueMeta, load_technique_meta_from_repo
 
 
 Lex = Literal["abbr", "ortho"]
@@ -205,8 +206,8 @@ def render_jzp_text_from_kv(kv: dict[str, str], token_sets: JianzipuTokenSets) -
         xian_finger = kv["xian_finger"]
         ensure_in(xian_finger, token_sets.xian_finger, "xian_finger")
         xian_list = _parse_int_csv(kv["xian"], min_v=1, max_v=7)
-        if len(xian_list) not in (1, 2):
-            raise ValueError(f"xian 列表长度仅支持 1 或 2：{xian_list!r}")
+        if len(xian_list) not in (1, 2, 3):
+            raise ValueError(f"xian 列表长度仅支持 1/2/3：{xian_list!r}")
 
         hui_finger = kv.get("hui_finger")
         hui = kv.get("hui")
@@ -329,6 +330,274 @@ def load_token_sets_from_repo() -> JianzipuTokenSets:
     return JianzipuTokenSets.load_from_repo(repo_root)
 
 
+def _validate_guqinlink_kv(kv: dict[str, str]) -> None:
+    """校验 staff1 的 GuqinLink@0.2 KV（学术级：未知字段直接失败）。"""
+
+    allowed = {"eid", "slot"}
+    extra = set(kv.keys()) - allowed
+    if extra:
+        raise ValueError(f"GuqinLink@0.2 含未识别字段：{sorted(extra)!r}")
+    eid = kv.get("eid")
+    if not eid:
+        raise ValueError("GuqinLink@0.2 缺少 eid")
+    slot = kv.get("slot")
+    if slot is None:
+        return
+    slot_s = str(slot).strip()
+    if not slot_s:
+        raise ValueError("GuqinLink@0.2 slot 为空字符串（应省略该字段）")
+    if slot_s in ("L", "R"):
+        return
+    if slot_s.isdigit() and 1 <= int(slot_s) <= 7:
+        return
+    raise ValueError(f"GuqinLink@0.2 slot 非法（期望 1..7 或 L/R）：{slot_s!r}")
+
+
+def _allowed_guqinjzp_keys_for_form(form: str) -> set[str]:
+    base = {"eid", "form", "lex", "truth_src", "user_touched"}
+    if form == "simple":
+        keys = {"hui_finger", "hui", "fen", "special", "xian_finger", "xian"}
+        v03 = {"sound", "pos_ratio", "harmonic_n", "harmonic_k"}
+        for i in range(1, 8):
+            v03.add(f"pos_ratio_{i}")
+        return base | keys | v03
+    if form == "complex":
+        keys = {
+            "complex_finger",
+            "l_hui_finger",
+            "l_hui",
+            "l_fen",
+            "l_special",
+            "l_xian",
+            "r_hui_finger",
+            "r_hui",
+            "r_fen",
+            "r_special",
+            "r_xian",
+        }
+        v03 = {
+            "l_sound",
+            "l_pos_ratio",
+            "l_harmonic_n",
+            "l_harmonic_k",
+            "r_sound",
+            "r_pos_ratio",
+            "r_harmonic_n",
+            "r_harmonic_k",
+        }
+        return base | keys | v03
+    if form == "aside":
+        return base | {"modifier", "special", "move_finger", "hui", "fen"}
+    if form == "marker":
+        return base | {"marker"}
+    if form == "both":
+        return base | {"both_finger"}
+    raise ValueError(f"未知 form：{form!r}")
+
+
+def _parse_xian_list(value: str) -> list[int]:
+    return _parse_int_csv(value, min_v=1, max_v=7)
+
+
+def _validate_guqinjzp_kv_schema(
+    kv: dict[str, str],
+    *,
+    token_sets: JianzipuTokenSets,
+    technique_meta: TechniqueMeta,
+) -> None:
+    """校验 staff2 的 GuqinJZP@0.2/@0.3 KV（字段集合 + 关键组合约束）。"""
+
+    form = kv.get("form")
+    if form not in ("simple", "complex", "aside", "marker", "both"):
+        raise ValueError(f"GuqinJZP: form 非法或缺失：{form!r}")
+    if kv.get("eid") in (None, ""):
+        raise ValueError("GuqinJZP: 缺少 eid")
+
+    allowed = _allowed_guqinjzp_keys_for_form(form)
+    extra = set(kv.keys()) - allowed
+    if extra:
+        raise ValueError(f"GuqinJZP 含未识别字段：form={form} extra={sorted(extra)!r}")
+
+    lex = kv.get("lex", "abbr")
+    if lex not in ("abbr", "ortho"):
+        raise ValueError(f"GuqinJZP: lex 非法：{lex!r}")
+
+    if form == "simple":
+        xf = kv.get("xian_finger")
+        if xf is None:
+            raise ValueError("GuqinJZP.simple: 缺少 xian_finger")
+        if xf not in token_sets.xian_finger:
+            raise ValueError(f"GuqinJZP.simple: xian_finger 不在 token 规范内：{xf!r}")
+        xian = kv.get("xian")
+        if xian is None:
+            raise ValueError("GuqinJZP.simple: 缺少 xian")
+        xian_list = _parse_xian_list(xian)
+        allowed_counts = technique_meta.allowed_xian_counts_for_simple(xf)
+        if len(xian_list) not in allowed_counts:
+            raise ValueError(f"GuqinJZP.simple: xian 长度不合法：{len(xian_list)} not in {allowed_counts} (xian_finger={xf!r})")
+
+        # v0.3 组合约束：若出现 sound/pos_ratio 等字段，则要求内部一致（不允许半填）。
+        has_v03 = any(
+            k in kv
+            for k in (
+                "sound",
+                "pos_ratio",
+                "harmonic_n",
+                "harmonic_k",
+                *[f"pos_ratio_{i}" for i in range(1, 8)],
+            )
+        )
+        if has_v03:
+            sound = kv.get("sound")
+            if sound not in ("open", "pressed", "harmonic"):
+                raise ValueError(f"GuqinJZP.simple@v0.3: sound 缺失或非法：{sound!r}")
+            if sound == "open":
+                forbidden = {"pos_ratio", "harmonic_n", "harmonic_k"} | {f"pos_ratio_{i}" for i in range(1, 8)}
+                present = forbidden & set(kv.keys())
+                if present:
+                    raise ValueError(f"GuqinJZP.simple@v0.3: sound=open 不允许出现位置/泛音字段：{sorted(present)!r}")
+            elif sound == "pressed":
+                if len(xian_list) == 1:
+                    if "pos_ratio" not in kv:
+                        raise ValueError("GuqinJZP.simple@v0.3: pressed 单弦缺少 pos_ratio")
+                    forbidden = {"harmonic_n", "harmonic_k"} | {f"pos_ratio_{i}" for i in range(1, 8)}
+                    present = forbidden & set(kv.keys())
+                    if present:
+                        raise ValueError(f"GuqinJZP.simple@v0.3: pressed 单弦不允许出现 harmonic/pos_ratio_i：{sorted(present)!r}")
+                else:
+                    need = {f"pos_ratio_{i}" for i in range(1, len(xian_list) + 1)}
+                    missing = [k for k in sorted(need) if k not in kv]
+                    if missing:
+                        raise ValueError(f"GuqinJZP.simple@v0.3: pressed 多弦缺少字段：{missing!r}")
+                    forbidden = {"pos_ratio", "harmonic_n", "harmonic_k"}
+                    present = forbidden & set(kv.keys())
+                    if present:
+                        raise ValueError(f"GuqinJZP.simple@v0.3: pressed 多弦不允许出现 pos_ratio/harmonic：{sorted(present)!r}")
+            else:
+                if "harmonic_n" not in kv:
+                    raise ValueError("GuqinJZP.simple@v0.3: harmonic 缺少 harmonic_n")
+                # harmonic：允许带 pos_ratio 作为“显示缓存”（例如 k/n），但不允许出现 pressed 的 pos_ratio_i。
+                forbidden = {f"pos_ratio_{i}" for i in range(1, 8)}
+                present = forbidden & set(kv.keys())
+                if present:
+                    raise ValueError(f"GuqinJZP.simple@v0.3: harmonic 不允许出现 pressed 多弦位置字段：{sorted(present)!r}")
+        return
+
+    if form == "complex":
+        cf = kv.get("complex_finger")
+        if cf is None:
+            raise ValueError("GuqinJZP.complex: 缺少 complex_finger")
+        if cf not in token_sets.complex_finger:
+            raise ValueError(f"GuqinJZP.complex: complex_finger 不在 token 规范内：{cf!r}")
+        rule = technique_meta.complex_rule(cf)
+        if rule is None:
+            raise ValueError(f"GuqinJZP.complex: TechniqueMeta 缺少 complex_finger 规则：{cf!r}")
+        if int(rule.valence) != 2 or tuple(rule.slot_schema) != ("L", "R"):
+            raise ValueError(f"GuqinJZP.complex: 当前仅支持 valence=2 且 slot_schema=[L,R]，收到：{rule!r}")
+        if kv.get("l_xian") is None or kv.get("r_xian") is None:
+            raise ValueError("GuqinJZP.complex: 缺少 l_xian 或 r_xian")
+        _ = int(kv["l_xian"])
+        _ = int(kv["r_xian"])
+
+        has_v03 = any(k in kv for k in ("l_sound", "l_pos_ratio", "l_harmonic_n", "r_sound", "r_pos_ratio", "r_harmonic_n"))
+        if has_v03:
+            l_sound = kv.get("l_sound")
+            r_sound = kv.get("r_sound")
+            if l_sound not in ("open", "pressed", "harmonic") or r_sound not in ("open", "pressed", "harmonic"):
+                raise ValueError(f"GuqinJZP.complex@v0.3: l_sound/r_sound 缺失或非法：{l_sound!r}/{r_sound!r}")
+            if l_sound == "pressed" and "l_pos_ratio" not in kv:
+                raise ValueError("GuqinJZP.complex@v0.3: l_sound=pressed 缺少 l_pos_ratio")
+            if l_sound == "harmonic" and "l_harmonic_n" not in kv:
+                raise ValueError("GuqinJZP.complex@v0.3: l_sound=harmonic 缺少 l_harmonic_n")
+            if r_sound == "pressed" and "r_pos_ratio" not in kv:
+                raise ValueError("GuqinJZP.complex@v0.3: r_sound=pressed 缺少 r_pos_ratio")
+            if r_sound == "harmonic" and "r_harmonic_n" not in kv:
+                raise ValueError("GuqinJZP.complex@v0.3: r_sound=harmonic 缺少 r_harmonic_n")
+        return
+
+    if form == "aside":
+        mv = kv.get("move_finger")
+        if mv is None:
+            raise ValueError("GuqinJZP.aside: 缺少 move_finger")
+        if mv not in token_sets.move_finger:
+            raise ValueError(f"GuqinJZP.aside: move_finger 不在 token 规范内：{mv!r}")
+        return
+
+    if form == "marker":
+        mk = kv.get("marker")
+        if mk is None:
+            raise ValueError("GuqinJZP.marker: 缺少 marker")
+        if mk not in token_sets.marker:
+            raise ValueError(f"GuqinJZP.marker: marker 不在 token 规范内：{mk!r}")
+        return
+
+    if form == "both":
+        bf = kv.get("both_finger")
+        if bf is None:
+            raise ValueError("GuqinJZP.both: 缺少 both_finger")
+        if bf not in token_sets.both_finger:
+            raise ValueError(f"GuqinJZP.both: both_finger 不在 token 规范内：{bf!r}")
+        return
+
+
+def _validate_event_alignment(
+    *,
+    eid: str,
+    staff1_notes: list[dict[str, Any]],
+    staff2_kv: dict[str, str],
+    technique_meta: TechniqueMeta,
+) -> None:
+    """校验 staff1 事件结构与 staff2 指法真值结构的对齐（slot/多音约束）。"""
+
+    form = staff2_kv.get("form")
+    slot_strs = [str(n.get("slot")).strip() if n.get("slot") is not None else None for n in staff1_notes]
+
+    if len(staff1_notes) > 1:
+        if any(s is None or s == "" for s in slot_strs):
+            raise ValueError(f"staff1 chord 事件缺少 slot：eid={eid}")
+        if len(set(slot_strs)) != len(slot_strs):
+            raise ValueError(f"staff1 chord 事件 slot 重复：eid={eid} slots={slot_strs!r}")
+
+    if form == "simple":
+        xf = staff2_kv.get("xian_finger") or ""
+        xian_list = _parse_xian_list(staff2_kv.get("xian") or "")
+        if len(xian_list) > 1 and len(set(xian_list)) != len(xian_list):
+            raise ValueError(f"对齐失败：simple 多弦不允许重复弦号（同一时刻一根弦不能发两个音）：eid={eid} xian={xian_list!r}")
+        schema = technique_meta.slot_schema_for_simple(xf, len(xian_list))
+        if schema is None:
+            raise ValueError(f"TechniqueMeta 缺少 simple slot_schema：xian_finger={xf!r} xian_count={len(xian_list)}")
+        if len(xian_list) == 1:
+            if len(staff1_notes) != 1:
+                raise ValueError(f"对齐失败：simple 单弦要求 staff1 单音事件：eid={eid} staff1_notes={len(staff1_notes)}")
+            return
+        if len(staff1_notes) != len(xian_list):
+            raise ValueError(f"对齐失败：simple 多弦要求 staff1 chord note 数一致：eid={eid} xian={xian_list!r} staff1_notes={len(staff1_notes)}")
+        expected_slots = [s for s in schema if s is not None]
+        got_slots = [s for s in slot_strs if s is not None]
+        if sorted(got_slots) != sorted(expected_slots):
+            raise ValueError(f"对齐失败：simple 多弦 slot 不匹配：eid={eid} expected={expected_slots!r} got={got_slots!r}")
+        return
+
+    if form == "complex":
+        if len(staff1_notes) != 2:
+            raise ValueError(f"对齐失败：complex 要求 staff1 恰好 2-note chord：eid={eid} staff1_notes={len(staff1_notes)}")
+        if set(slot_strs) != {"L", "R"}:
+            raise ValueError(f"对齐失败：complex 要求 staff1 slot=L/R：eid={eid} got={slot_strs!r}")
+        try:
+            lx = int(staff2_kv.get("l_xian") or "0")
+            rx = int(staff2_kv.get("r_xian") or "0")
+        except ValueError:
+            raise ValueError(f"对齐失败：complex 缺少/非法 l_xian/r_xian：eid={eid}") from None
+        if not (1 <= lx <= 7 and 1 <= rx <= 7):
+            raise ValueError(f"对齐失败：complex l_xian/r_xian 超界：eid={eid} l={lx} r={rx}")
+        if lx == rx:
+            raise ValueError(f"对齐失败：complex 不允许重复弦号（同一时刻一根弦不能发两个音）：eid={eid} xian={lx}")
+        return
+
+    if len(staff1_notes) != 1:
+        raise ValueError(f"对齐失败：{form} 事件要求 staff1 单音：eid={eid} staff1_notes={len(staff1_notes)}")
+
+
 def _collect_staff1_events(measure: ET.Element) -> list[tuple[str, list[ET.Element]]]:
     out: list[tuple[str, list[ET.Element]]] = []
     current_eid: str | None = None
@@ -386,6 +655,7 @@ def _collect_staff2_by_eid(measure: ET.Element) -> dict[str, ET.Element]:
 
 def build_score_view(*, project_id: str, revision: str, musicxml_bytes: bytes) -> ProjectScoreView:
     token_sets = load_token_sets_from_repo()
+    technique_meta = load_technique_meta_from_repo()
     root = ET.fromstring(musicxml_bytes)
     part = root.find("./part")
     if part is None:
@@ -419,6 +689,9 @@ def build_score_view(*, project_id: str, revision: str, musicxml_bytes: bytes) -
             staff2_other = _find_first_other_technical(staff2_note)
             assert staff2_other is not None
             jzp_kv = parse_kv_block(_strip(staff2_other.text)).kv
+
+            _validate_guqinjzp_kv_schema(jzp_kv, token_sets=token_sets, technique_meta=technique_meta)
+
             duration = _get_note_duration(staff2_note)
             if any(_get_note_duration(n) != duration for n in staff1_notes):
                 raise ValueError(f"staff1/staff2 duration 不一致：measure={m_no} eid={eid}")
@@ -438,6 +711,7 @@ def build_score_view(*, project_id: str, revision: str, musicxml_bytes: bytes) -
                 other = _find_first_other_technical(n)
                 assert other is not None
                 link_kv = parse_kv_block(_strip(other.text)).kv
+                _validate_guqinlink_kv(link_kv)
                 slot = link_kv.get("slot")
                 string = n.findtext(".//string")
                 is_rest = n.find("./rest") is not None
@@ -449,6 +723,8 @@ def build_score_view(*, project_id: str, revision: str, musicxml_bytes: bytes) -
                         "is_rest": bool(is_rest),
                     }
                 )
+
+            _validate_event_alignment(eid=eid, staff1_notes=s1_notes, staff2_kv=jzp_kv, technique_meta=technique_meta)
 
             events.append(
                 ProjectScoreEvent(
@@ -473,15 +749,32 @@ EditOpType = Literal["update_guqin_event"]
 class EditOp:
     op: EditOpType
     eid: str
-    changes: dict[str, str]
+    # 支持显式删除字段：value=None 表示删除该 key（而不是写入字符串 "None"）。
+    changes: dict[str, str | None]
 
 
 def apply_edit_ops(*, musicxml_bytes: bytes, ops: list[EditOp], edit_source: EditSource = "user") -> bytes:
     token_sets = load_token_sets_from_repo()
+    technique_meta = load_technique_meta_from_repo()
     root = ET.fromstring(musicxml_bytes)
     part = root.find("./part")
     if part is None:
         raise ValueError("缺少 part")
+
+    # eid -> staff1 notes（用于对齐校验：slot/多音结构）
+    staff1_notes_by_eid: dict[str, list[dict[str, Any]]] = {}
+    for m in part.findall("./measure"):
+        for note in m.findall("./note"):
+            if _get_staff(note) != "1":
+                continue
+            other = _find_first_other_technical(note)
+            if other is None:
+                continue
+            kvb = parse_kv_block(_strip(other.text))
+            if kvb.prefix != "GuqinLink" or kvb.version != "0.2":
+                continue
+            _validate_guqinlink_kv(kvb.kv)
+            staff1_notes_by_eid.setdefault(kvb.kv["eid"], []).append({"slot": kvb.kv.get("slot")})
 
     # 建立 eid → staff2 note 的索引（全曲范围）
     staff2_notes: dict[str, tuple[ET.Element, ET.Element, str]] = {}
@@ -518,7 +811,10 @@ def apply_edit_ops(*, musicxml_bytes: bytes, ops: list[EditOp], edit_source: Edi
         for k, v in op.changes.items():
             if k == "eid":
                 continue
-            kv[k] = v
+            if v is None:
+                kv.pop(k, None)
+            else:
+                kv[k] = v
 
         # 补齐/更新元数据（不影响谱字读法生成）：
         # - truth_src：当前真值来源（auto/user）
@@ -537,13 +833,44 @@ def apply_edit_ops(*, musicxml_bytes: bytes, ops: list[EditOp], edit_source: Edi
         if "form" not in kv:
             raise ValueError("GuqinJZP@0.2: 缺少 form")
 
+        _validate_guqinjzp_kv_schema(kv, token_sets=token_sets, technique_meta=technique_meta)
+
+        staff1_notes = staff1_notes_by_eid.get(op.eid)
+        if staff1_notes is None:
+            raise ValueError(f"找不到 eid 对应的 staff1 事件：{op.eid}")
+        _validate_event_alignment(eid=op.eid, staff1_notes=staff1_notes, staff2_kv=kv, technique_meta=technique_meta)
+
         # 渲染 + 可解析性校验（学术级：不通过即失败）
         jzp_text = render_jzp_text_from_kv(kv, token_sets)
         lex: Lex = kv.get("lex", "abbr")  # type: ignore[assignment]
         validate_jzp_text_parseable(jzp_text, lex=lex, token_sets=token_sets)
 
         # 写回 other-technical 与 lyric below（显示缓存）
-        other.text = dump_kv_block("GuqinJZP", version, kv)
+        out_version = version
+        if version == "0.2":
+            # 若写入了 v0.3 真值字段，则自动升级为 GuqinJZP@0.3（避免“0.2 里混入 0.3 字段”的不一致）。
+            if any(
+                k in kv
+                for k in (
+                    "sound",
+                    "pos_ratio",
+                    "harmonic_n",
+                    "harmonic_k",
+                    "pos_ratio_1",
+                    "pos_ratio_2",
+                    "pos_ratio_3",
+                    "l_sound",
+                    "l_pos_ratio",
+                    "l_harmonic_n",
+                    "l_harmonic_k",
+                    "r_sound",
+                    "r_pos_ratio",
+                    "r_harmonic_n",
+                    "r_harmonic_k",
+                )
+            ):
+                out_version = "0.3"
+        other.text = dump_kv_block("GuqinJZP", out_version, kv)
         lyric_text_el = _ensure_lyric_below(note)
         lyric_text_el.text = jzp_text
 

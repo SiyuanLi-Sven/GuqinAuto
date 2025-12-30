@@ -7,7 +7,7 @@ pitch-unresolved → compile_pitch_from_jianpu 演示脚本（开发期）。
 - 调用编译器（从 jianpu_text=lyric@above + 给定 tonic/mode）写回 pitch
 
 运行：
-  python temp/backend_compile_pitch_from_jianpu_try.py
+  python scripts/backend_compile_pitch_from_jianpu_try.py
 """
 
 from __future__ import annotations

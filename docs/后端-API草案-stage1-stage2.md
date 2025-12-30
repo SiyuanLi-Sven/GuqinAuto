@@ -139,7 +139,8 @@ stage2 输入必须同时支持：
 {
   "locks": [
     {"eid": "E000010", "fields": {"string": 3}},
-    {"eid": "E000011", "fields": {"technique": "open"}}
+    {"eid": "E000011", "fields": {"technique": "open"}},
+    {"eid": "E000012", "fields": {"slot": "L", "string": 3}}
   ],
   "preferences": {
     "prefer_harmonic": 0.2,
@@ -153,6 +154,7 @@ stage2 输入必须同时支持：
 约束与失败策略：
 
 - 锁定字段导致候选集合为空：必须 400 失败，并返回“最小冲突集”或至少指出冲突 eid
+- chord 锁定必须显式指定 `fields.slot`（例如 `L/R` 或 `1/2/...`）；若缺失 slot，必须失败（避免歧义）。
 
 ### 1.5 stage2 输出（Top-K 方案 + 可解释）
 
@@ -192,6 +194,18 @@ stage2 输入必须同时支持：
 
 - stage2 产出的 `derived_guqinjzp_kv` 仅用于 UI 展示与“候选对比”，不等于已经写回真源
 - 真值写回必须由用户显式触发：前端在用户确认后调用 `POST /projects/{project_id}/apply` 提交 `update_guqin_event`（或未来的更细粒度 op）
+
+---
+
+## 现状备注（与代码对齐）
+
+- stage2 推荐目前已支持：
+  - 单音事件（targets=1, slot=null）
+  - 2-note chord（targets=2，要求 slot 非空且唯一；输出 `assignments[].choices[]`）
+- stage2 的锁定（locks）目前仅对单音事件生效；若对 chord 事件传 locks，后端会明确失败（避免锁定语义歧义）。
+- stage2 的 `apply_mode=commit_best`（生成初稿写回）：
+  - 单音事件：支持（写入 `sound/pos_ratio/harmonic_n` 等 v0.3 真值字段）
+  - chord 事件：仅在 staff2 已具备可承载结构时支持写回（例如 `form=complex` 且 slot=L/R）；否则会明确失败（不猜结构）。
 
 ---
 

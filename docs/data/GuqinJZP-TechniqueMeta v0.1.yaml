@@ -1,0 +1,52 @@
+meta:
+  name: GuqinJZP-TechniqueMeta
+  version: "0.1"
+  updated_at: "2025-12-28"
+  note: >
+    本文件定义 GuqinAuto 的“技法元数据（Technique Meta）”，用于把减字谱 token 的
+    “价位（valence，需匹配的弦位数字个数）/slot 结构/多音约束”写成可执行规则。
+
+    使用场景：
+    - Profile 校验：避免把“需要多弦/多 slot”的谱字当成单音处理（正确地失败）。
+    - 编辑器 Inspector：根据 slot_schema 展示输入控件（单音 vs 多音/撮）。
+    - stage1/stage2：为 chord-aware 的枚举与优化提供结构约束（下一步实现）。
+
+    重要约束：
+    - references/ 仅供参考；运行期禁止依赖 references/。
+    - 本文件是规范的一部分：后端会严格消费并执行其中约束。
+
+rules:
+  # form=simple：以 xian_finger 为主的“弦序指法短语”
+  simple:
+    # 默认：允许 1 或 2 弦（历史原因：我们已有 v0.2 示例与最小闭环基于此）。
+    # 为避免“价位错误导致虚假成功”，默认严格按 valence=1 执行：只允许 1 弦。
+    # 特例：历（references/jianzipu 提到其价位可为 2 或 3），因此允许 2 或 3 弦。
+    xian_finger:
+      default:
+        xian_count_allowed: [1]
+        slot_schema_by_xian_count:
+          "1": [null]
+          "2": ["1", "2"]
+          "3": ["1", "2", "3"]
+      overrides:
+        历:
+          xian_count_allowed: [2, 3]
+
+  # form=complex：撮式/复式（一个谱字对应多个同时音）
+  complex:
+    complex_finger:
+      撮:
+        valence: 2
+        slot_schema: ["L", "R"]
+      掐撮:
+        valence: 2
+        slot_schema: ["L", "R"]
+      双弹:
+        valence: 2
+        slot_schema: ["L", "R"]
+      拨剌:
+        valence: 2
+        slot_schema: ["L", "R"]
+      齐撮:
+        valence: 2
+        slot_schema: ["L", "R"]

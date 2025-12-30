@@ -63,9 +63,9 @@ python backend/run_server.py --reload
 
 ### 开发期检查工具
 
-- 禁止运行期依赖 `references`：`python temp/check_no_references_usage.py`
-- Profile v0.2 示例校验：`python temp/validate_profile_v0_2.py`
-- 后端编辑尝试（创建 workspace 项目 + 应用一次指法编辑）：`python temp/backend_edit_try_v0_2.py`
+- 禁止运行期依赖 `references`：`python scripts/check_no_references_usage.py`
+- Profile v0.2 示例校验：`python scripts/validate_profile_v0_2.py`
+- 后端编辑尝试（创建 workspace 项目 + 应用一次指法编辑）：`python scripts/backend_edit_try_v0_2.py`
 
 ## 重要约束（写死）
 

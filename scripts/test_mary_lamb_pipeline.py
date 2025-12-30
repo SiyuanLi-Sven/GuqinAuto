@@ -12,6 +12,9 @@
 
 输出文件：
 - temp/out_mary_lamb/after_stage2_autodraft.musicxml
+
+运行：
+  python scripts/test_mary_lamb_pipeline.py
 """
 
 from __future__ import annotations

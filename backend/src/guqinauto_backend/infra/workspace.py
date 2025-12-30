@@ -228,6 +228,32 @@ def create_project_from_example(*, name: str, example_filename: str, tuning: Pro
     return meta
 
 
+def create_project_from_musicxml_bytes(*, name: str, musicxml_bytes: bytes, tuning: ProjectTuning | None = None) -> ProjectMeta:
+    """从上传的 MusicXML 创建工程（写入 workspace，生成 R000001）。"""
+
+    if not isinstance(musicxml_bytes, (bytes, bytearray)) or len(musicxml_bytes) == 0:
+        raise ValueError("musicxml_bytes 为空")
+
+    project_id = generate_project_id()
+    ensure_project_dirs(project_id)
+
+    revision = next_revision_id(None)
+    rev_path = revisions_dir(project_id) / f"{revision}.musicxml"
+    rev_path.write_bytes(bytes(musicxml_bytes))
+
+    now = _utc_now_iso()
+    meta = ProjectMeta(
+        project_id=project_id,
+        name=name,
+        created_at=now,
+        updated_at=now,
+        current_revision=revision,
+        tuning=tuning or ProjectTuning.default_demo(),
+    )
+    save_project_meta(meta)
+    return meta
+
+
 def load_revision_bytes(project_id: str, revision: str) -> bytes:
     p = revisions_dir(project_id) / f"{revision}.musicxml"
     if not p.exists():

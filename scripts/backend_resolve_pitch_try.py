@@ -7,7 +7,7 @@
 - 生成新 revision，并确保仍能 build_score_view
 
 运行：
-  python temp/backend_resolve_pitch_try.py
+  python scripts/backend_resolve_pitch_try.py
 """
 
 from __future__ import annotations

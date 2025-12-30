@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.1">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Guqin</part-name>
+    </score-part>
+  </part-list>
+
+  <part id="P1">
+    <measure number="1">
+      <print new-system="yes" />
+      <attributes>
+        <divisions>480</divisions>
+        <key><fifths>0</fifths></key>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <staves>2</staves>
+        <clef number="1"><sign>jianpu</sign></clef>
+        <clef number="2"><sign>TAB</sign></clef>
+      </attributes>
+
+      <!--
+        v0.3 示例：simple 多弦（历）——一个 eid 对应多个同时音（staff1 chord），staff2 用 form=simple + xian=1,2 表达。
+        说明：
+        - 该示例用于测试/演示：stage1 为每个 slot(1..N) 生成候选；用户或 stage2 写回 sound=pressed 时写入 pos_ratio_1..N。
+        - 调弦建议：demo_g_a_c_d_e_g_a（G3 A3 C4 D4 E4 G4 A4）
+      -->
+
+      <!-- staff 1：chord -->
+      <note id="N000001A">
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>480</duration><type>quarter</type>
+        <voice>1</voice><staff>1</staff>
+        <notations><technical><string>3</string><other-technical>GuqinLink@0.2;eid=E000001;slot=1;</other-technical></technical></notations>
+        <lyric number="1" placement="above"><text>1</text></lyric>
+      </note>
+      <note id="N000002A">
+        <chord/>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>480</duration><type>quarter</type>
+        <voice>1</voice><staff>1</staff>
+        <notations><technical><string>5</string><other-technical>GuqinLink@0.2;eid=E000001;slot=2;</other-technical></technical></notations>
+      </note>
+
+      <backup><duration>480</duration></backup>
+      <!-- staff 2：一条事件（占位读法层；真值字段由推荐/用户写回） -->
+      <note id="N000001B">
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>480</duration><type>quarter</type>
+        <voice>2</voice><staff>2</staff>
+        <notehead>none</notehead>
+        <notations><technical><other-technical>GuqinJZP@0.3;eid=E000001;form=simple;lex=abbr;hui_finger=散音;xian_finger=历;xian=1,2;</other-technical></technical></notations>
+        <lyric number="1" placement="below"><text>散历一二</text></lyric>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

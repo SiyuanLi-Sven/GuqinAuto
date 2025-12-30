@@ -6,7 +6,7 @@ stage2（Top-K 推荐，不写回）开发期尝试脚本。
 - 调用 /stage2 等价逻辑（直接调用 api_stage2）拿到 top-K 推荐
 
 运行：
-  python temp/backend_stage2_try.py
+  python scripts/backend_stage2_try.py
 """
 
 from __future__ import annotations

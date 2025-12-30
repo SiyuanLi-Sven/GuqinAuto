@@ -21,4 +21,4 @@
 
 运行：
 
-`python temp/check_no_references_usage.py`
+`python scripts/check_no_references_usage.py`

@@ -7,7 +7,7 @@ stage1（PositionEngine + /stage1 等价逻辑）开发期尝试脚本。
 - 使用指定 tuning 枚举每个事件的候选音位（open/press）
 
 运行：
-  python temp/backend_stage1_try.py
+  python scripts/backend_stage1_try.py
 """
 
 from __future__ import annotations

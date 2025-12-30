@@ -11,7 +11,10 @@
 
 注意：
 - 项目明令禁止运行期依赖 `references`；因此本脚本只能引用仓库内的实现。
-- 该脚本放在 temp/ 下，作为开发期的“主动测试/检查样本”工具，不作为正式库代码发布。
+- 该脚本放在 scripts/ 下，作为开发期的“主动测试/检查样本”工具，不作为正式库代码发布。
+
+运行：
+  python scripts/validate_profile_v0_2.py
 """
 
 from __future__ import annotations
@@ -27,7 +30,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 EXAMPLES_DIR = ROOT / "docs" / "data" / "examples"
 
-# 允许以 `python temp/xxx.py` 的方式运行时也能 import 后端代码（backend/src）。
+# 允许以 `python scripts/xxx.py` 的方式运行时也能 import 后端代码（backend/src）。
 BACKEND_SRC = ROOT / "backend" / "src"
 if str(BACKEND_SRC) not in sys.path:
     sys.path.insert(0, str(BACKEND_SRC))

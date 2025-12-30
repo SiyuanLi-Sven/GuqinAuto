@@ -61,7 +61,7 @@ export function ProjectList() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           name,
-          example_filename: "guqin_jzp_profile_v0.2_showcase.musicxml",
+          example_filename: "guqin_jzp_profile_v0.3_mary_had_a_little_lamb_input.musicxml",
         }),
       });
       await reload();

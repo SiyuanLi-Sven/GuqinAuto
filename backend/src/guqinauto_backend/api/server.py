@@ -16,6 +16,7 @@ from dataclasses import asdict
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
+from fastapi import File, Form, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -29,6 +30,7 @@ from ..infra.workspace import (
     ProjectMeta,
     ProjectTuning,
     create_project_from_example,
+    create_project_from_musicxml_bytes,
     list_projects,
     load_project_meta,
     load_revision_bytes,
@@ -50,7 +52,7 @@ app.add_middleware(
 
 class CreateProjectRequest(BaseModel):
     name: str = Field(min_length=1)
-    example_filename: str = Field(default="guqin_jzp_profile_v0.2_showcase.musicxml")
+    example_filename: str = Field(default="guqin_jzp_profile_v0.3_mary_had_a_little_lamb_input.musicxml")
     tuning: Stage1Tuning | None = None
 
 
@@ -131,6 +133,39 @@ def api_create_project(req: CreateProjectRequest) -> dict[str, Any]:
     return asdict(meta)
 
 
+@app.post("/projects/import_musicxml")
+async def api_import_musicxml(
+    file: UploadFile = File(...),
+    name: str | None = Form(default=None),
+) -> dict[str, Any]:
+    """上传 MusicXML 并创建工程（严格校验 Profile，不做隐式补全）。"""
+
+    raw = await file.read()
+    if not raw:
+        raise HTTPException(status_code=400, detail="上传文件为空")
+
+    # 若未提供 name，则使用文件名（去掉扩展名）作为工程名
+    project_name = (name or "").strip()
+    if not project_name:
+        fn = (file.filename or "").strip()
+        if fn.lower().endswith(".musicxml"):
+            fn = fn[: -len(".musicxml")]
+        elif fn.lower().endswith(".xml"):
+            fn = fn[: -len(".xml")]
+        project_name = fn or "未命名工程"
+
+    # 学术级：先严格解析/校验，再落盘（避免把不符合 Profile 的工程写进 workspace）
+    try:
+        _ = build_score_view(project_id="UPLOAD", revision="R000000", musicxml_bytes=raw)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"MusicXML 不符合当前 Profile（无法解析为事件流）：{e}") from e
+
+    meta = create_project_from_musicxml_bytes(name=project_name, musicxml_bytes=raw)
+    xml_bytes = load_revision_bytes(meta.project_id, meta.current_revision)
+    view = build_score_view(project_id=meta.project_id, revision=meta.current_revision, musicxml_bytes=xml_bytes)
+    return {"project": asdict(meta), "score": asdict(view)}
+
+
 @app.get("/projects/{project_id}")
 def api_get_project(project_id: str) -> dict[str, Any]:
     meta = load_project_meta(project_id)
@@ -148,17 +183,23 @@ def api_get_musicxml(project_id: str) -> dict[str, Any]:
 def api_get_score(project_id: str) -> dict[str, Any]:
     meta = load_project_meta(project_id)
     xml_bytes = load_revision_bytes(project_id, meta.current_revision)
-    view = build_score_view(project_id=project_id, revision=meta.current_revision, musicxml_bytes=xml_bytes)
-    return asdict(view)
+    try:
+        view = build_score_view(project_id=project_id, revision=meta.current_revision, musicxml_bytes=xml_bytes)
+        return asdict(view)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"MusicXML 不符合当前 Profile（无法解析为事件流）：{e}") from e
 
 
 @app.get("/projects/{project_id}/status")
 def api_get_status(project_id: str) -> dict[str, Any]:
     meta = load_project_meta(project_id)
     xml_bytes = load_revision_bytes(project_id, meta.current_revision)
-    view = build_score_view(project_id=project_id, revision=meta.current_revision, musicxml_bytes=xml_bytes)
-    status = compute_status(view, tuning=meta.tuning)
-    return {"project": asdict(meta), "status": status_to_dict(status)}
+    try:
+        view = build_score_view(project_id=project_id, revision=meta.current_revision, musicxml_bytes=xml_bytes)
+        status = compute_status(view, tuning=meta.tuning)
+        return {"project": asdict(meta), "status": status_to_dict(status)}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"MusicXML 不符合当前 Profile（无法解析为事件流）：{e}") from e
 
 
 @app.post("/projects/{project_id}/apply")
@@ -180,7 +221,14 @@ def api_apply_edits(project_id: str, req: ApplyEditsRequest) -> dict[str, Any]:
             changes = raw.get("changes")
             if not isinstance(changes, dict):
                 raise ValueError("op 缺少 changes dict")
-            parsed_ops.append(EditOp(op="update_guqin_event", eid=eid, changes={str(k): str(v) for k, v in changes.items()}))
+            parsed_changes: dict[str, str | None] = {}
+            for k, v in changes.items():
+                key = str(k)
+                if v is None:
+                    parsed_changes[key] = None
+                else:
+                    parsed_changes[key] = str(v)
+            parsed_ops.append(EditOp(op="update_guqin_event", eid=eid, changes=parsed_changes))
 
         # 写回元数据：区分“系统生成初稿(auto)”与“用户改动(user)”
         new_xml_bytes = apply_edit_ops(musicxml_bytes=xml_bytes, ops=parsed_ops, edit_source=req.edit_source)  # type: ignore[arg-type]
@@ -361,7 +409,10 @@ def api_stage1(project_id: str, req: Stage1Request) -> dict[str, Any]:
         raise HTTPException(status_code=409, detail=f"revision 冲突：current={meta.current_revision} base={req.base_revision}")
 
     xml_bytes = load_revision_bytes(project_id, meta.current_revision)
-    view = build_score_view(project_id=project_id, revision=meta.current_revision, musicxml_bytes=xml_bytes)
+    try:
+        view = build_score_view(project_id=project_id, revision=meta.current_revision, musicxml_bytes=xml_bytes)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"MusicXML 不符合当前 Profile（无法解析为事件流）：{e}") from e
 
     tuning_dict = req.tuning.model_dump() if req.tuning is not None else meta.tuning.to_dict()
     tuning = ProjectTuning.from_dict(tuning_dict)
@@ -422,10 +473,6 @@ def api_stage1(project_id: str, req: Stage1Request) -> dict[str, Any]:
 
 @app.post("/projects/{project_id}/stage2")
 def api_stage2(project_id: str, req: Stage2Request) -> dict[str, Any]:
-    # MVP：仅做推荐（不写回）。
-    if req.apply_mode != "none":
-        raise HTTPException(status_code=400, detail="stage2 apply_mode!=none 暂未实现（当前仅支持推荐，不写回）")
-
     meta = load_project_meta(project_id)
     if meta.current_revision != req.base_revision:
         raise HTTPException(status_code=409, detail=f"revision 冲突：current={meta.current_revision} base={req.base_revision}")
@@ -446,12 +493,300 @@ def api_stage2(project_id: str, req: Stage2Request) -> dict[str, Any]:
 
     try:
         sols = optimize_topk(events=stage1["events"], k=req.k, locks=locks, weights=weights)
+
+        if req.apply_mode == "none":
+            return {
+                "project_id": project_id,
+                "revision": meta.current_revision,
+                "tuning": stage1["tuning"],
+                "stage1_warnings": stage1.get("warnings", []),
+                "stage2": {"k": req.k, "solutions": [s.__dict__ for s in sols]},
+            }
+
+        # commit_best：把 Top-1 推荐显式写回 staff2（生成新 revision）
+        # 约束（MVP）：
+        # - 仅覆盖 user_touched=0 的事件（用户确认过的视为硬约束）
+        # - 允许覆盖旧的 auto 真值字段：通过显式删除互斥字段（value=None）保证写回后仍满足 Profile v0.3
+        # - chord 写回只支持“staff2 已有结构化形态能承载”的情况：
+        #   - form=complex 且 slot=L/R（写入 l_*/r_*）
+        #   - form=simple 且 xian 为多弦（写入 pos_ratio_1..N / harmonic_n 等；要求每个 slot technique 一致）
+        if req.apply_mode != "commit_best":
+            raise HTTPException(status_code=400, detail=f"未知 apply_mode：{req.apply_mode!r}")
+        if not sols:
+            raise HTTPException(status_code=400, detail="stage2 无可用解，无法 commit_best")
+
+        xml_bytes = load_revision_bytes(project_id, meta.current_revision)
+        view = build_score_view(project_id=project_id, revision=meta.current_revision, musicxml_bytes=xml_bytes)
+        by_eid = {e.eid: e for m in view.measures for e in m.events}
+        sol0 = sols[0]
+
+        SIMPLE_V03_KEYS = {"sound", "pos_ratio", "harmonic_n", "harmonic_k", *[f"pos_ratio_{i}" for i in range(1, 8)]}
+        COMPLEX_V03_KEYS = {
+            "l_sound",
+            "l_pos_ratio",
+            "l_harmonic_n",
+            "l_harmonic_k",
+            "r_sound",
+            "r_pos_ratio",
+            "r_harmonic_n",
+            "r_harmonic_k",
+        }
+
+        def _diff_changes(existing_kv: dict[str, str], patch: dict[str, str | None]) -> dict[str, str | None]:
+            out: dict[str, str | None] = {}
+            for k, v in patch.items():
+                if v is None:
+                    if k in existing_kv:
+                        out[k] = None
+                else:
+                    if existing_kv.get(k) != v:
+                        out[k] = v
+            return out
+
+        def choice_to_changes(choice: dict[str, Any], *, existing_kv: dict[str, str]) -> dict[str, str | None]:
+            technique = str(choice.get("technique") or "")
+            string = int(choice["string"])
+            changes: dict[str, str | None] = {"xian": str(string)}
+
+            # 仅当缺省时补齐（避免覆盖已有读法层字段）
+            if "form" not in existing_kv:
+                changes["form"] = "simple"
+            if "lex" not in existing_kv:
+                changes["lex"] = "abbr"
+            if "xian_finger" not in existing_kv:
+                changes["xian_finger"] = "勾"
+
+            # v0.3 真值字段：显式删除不相关字段（允许重复推荐/覆盖 auto 结果，而不会留下脏字段导致 Profile 校验失败）
+            for k in SIMPLE_V03_KEYS:
+                changes[k] = None
+
+            if technique == "open":
+                changes["sound"] = "open"
+                return changes
+
+            if technique == "press":
+                changes["sound"] = "pressed"
+                pos = choice.get("pos") or {}
+                pr = pos.get("pos_ratio")
+                if not isinstance(pr, (int, float)):
+                    raise ValueError(f"press 候选缺少 pos_ratio：{choice!r}")
+                changes["pos_ratio"] = str(float(pr))
+                return changes
+
+            if technique == "harmonic":
+                changes["sound"] = "harmonic"
+                hn = choice.get("harmonic_n")
+                if not isinstance(hn, int):
+                    raise ValueError(f"harmonic 候选缺少 harmonic_n：{choice!r}")
+                changes["harmonic_n"] = str(int(hn))
+                hk = choice.get("harmonic_k")
+                if isinstance(hk, int):
+                    changes["harmonic_k"] = str(int(hk))
+                # 可选缓存：pos_ratio（k/n），用于显示；不参与 pitch 推导
+                pos = choice.get("pos") or {}
+                pr = pos.get("pos_ratio")
+                if isinstance(pr, (int, float)):
+                    changes["pos_ratio"] = str(float(pr))
+                return changes
+
+            raise ValueError(f"未知 technique：{technique!r}")
+
+        v03_keys = {
+            "sound",
+            "pos_ratio",
+            "harmonic_n",
+            "harmonic_k",
+            *[f"pos_ratio_{i}" for i in range(1, 8)],
+            "l_sound",
+            "l_pos_ratio",
+            "l_harmonic_n",
+            "l_harmonic_k",
+            "r_sound",
+            "r_pos_ratio",
+            "r_harmonic_n",
+            "r_harmonic_k",
+        }
+
+        def _sound_fields_from_choice(choice: dict[str, Any], *, prefix: str = "") -> dict[str, str | None]:
+            technique = str(choice.get("technique") or "")
+            out: dict[str, str | None] = {}
+            if prefix in ("l_", "r_"):
+                for k in COMPLEX_V03_KEYS:
+                    if k.startswith(prefix):
+                        out[k] = None
+            else:
+                for k in SIMPLE_V03_KEYS:
+                    out[k] = None
+
+            if technique == "open":
+                out[f"{prefix}sound" if prefix else "sound"] = "open"
+                return out
+            if technique == "press":
+                pos = choice.get("pos") or {}
+                pr = pos.get("pos_ratio")
+                if not isinstance(pr, (int, float)):
+                    raise ValueError(f"press 候选缺少 pos_ratio：{choice!r}")
+                out[f"{prefix}sound" if prefix else "sound"] = "pressed"
+                out[f"{prefix}pos_ratio" if prefix else "pos_ratio"] = str(float(pr))
+                return out
+            if technique == "harmonic":
+                hn = choice.get("harmonic_n")
+                if not isinstance(hn, int):
+                    raise ValueError(f"harmonic 候选缺少 harmonic_n：{choice!r}")
+                out[f"{prefix}sound" if prefix else "sound"] = "harmonic"
+                out[f"{prefix}harmonic_n" if prefix else "harmonic_n"] = str(int(hn))
+                hk = choice.get("harmonic_k")
+                if isinstance(hk, int):
+                    out[f"{prefix}harmonic_k" if prefix else "harmonic_k"] = str(int(hk))
+                # 可选缓存：pos_ratio（k/n）
+                pos = choice.get("pos") or {}
+                pr = pos.get("pos_ratio")
+                if isinstance(pr, (int, float)):
+                    out[f"{prefix}pos_ratio" if prefix else "pos_ratio"] = str(float(pr))
+                return out
+            raise ValueError(f"未知 technique：{technique!r}")
+
+        def chord_choices_to_changes(choices: list[dict[str, Any]], *, existing_kv: dict[str, str]) -> dict[str, str | None]:
+            slot_to_choice: dict[str, dict[str, Any]] = {}
+            for it in choices:
+                slot = it.get("slot")
+                ch = it.get("choice")
+                if not isinstance(slot, str) or not slot:
+                    raise ValueError(f"stage2 chord choices 含非法 slot：{it!r}")
+                if not isinstance(ch, dict):
+                    raise ValueError(f"stage2 chord choices 含非法 choice：{it!r}")
+                slot_to_choice[slot] = ch
+
+            form = existing_kv.get("form")
+            if form == "complex":
+                if set(slot_to_choice.keys()) != {"L", "R"}:
+                    raise ValueError(f"commit_best: complex 事件要求 slot=L/R，收到：{sorted(slot_to_choice.keys())!r}")
+                lc = slot_to_choice["L"]
+                rc = slot_to_choice["R"]
+                changes: dict[str, str | None] = {
+                    "form": "complex",
+                    "l_xian": str(int(lc["string"])),
+                    "r_xian": str(int(rc["string"])),
+                }
+                changes.update(_sound_fields_from_choice(lc, prefix="l_"))
+                changes.update(_sound_fields_from_choice(rc, prefix="r_"))
+                return changes
+
+            if form == "simple":
+                # 多弦 simple：slot 必须为 "1..N"，并且每个 slot 的 technique 必须一致（否则无法用一个 sound 表示）。
+                slots = sorted(slot_to_choice.keys(), key=lambda s: int(s) if s.isdigit() else 10**9)
+                if not slots or any((not s.isdigit() or int(s) <= 0) for s in slots):
+                    raise ValueError(f"commit_best: simple 多弦事件要求 slot=1..N，收到：{slots!r}")
+                if slots != [str(i) for i in range(1, len(slots) + 1)]:
+                    raise ValueError(f"commit_best: simple 多弦事件 slot 必须连续从 1 开始：{slots!r}")
+
+                techniques = {str(slot_to_choice[s].get('technique') or '') for s in slots}
+                if len(techniques) != 1:
+                    raise ValueError(f"commit_best: simple 多弦事件不支持混合 technique：{sorted(techniques)!r}")
+                technique = next(iter(techniques))
+
+                strings = [str(int(slot_to_choice[str(i)]["string"])) for i in range(1, len(slots) + 1)]
+                changes: dict[str, str | None] = {"form": "simple", "xian": ",".join(strings)}
+                for k in SIMPLE_V03_KEYS:
+                    changes[k] = None
+
+                if technique == "open":
+                    changes["sound"] = "open"
+                    return changes
+
+                if technique == "press":
+                    changes["sound"] = "pressed"
+                    for i in range(1, len(slots) + 1):
+                        pos = slot_to_choice[str(i)].get("pos") or {}
+                        pr = pos.get("pos_ratio")
+                        if not isinstance(pr, (int, float)):
+                            raise ValueError(f"press 候选缺少 pos_ratio：slot={i} choice={slot_to_choice[str(i)]!r}")
+                        changes[f"pos_ratio_{i}"] = str(float(pr))
+                    return changes
+
+                if technique == "harmonic":
+                    changes["sound"] = "harmonic"
+                    hns = {slot_to_choice[s].get("harmonic_n") for s in slots}
+                    if any(not isinstance(hn, int) for hn in hns):
+                        raise ValueError(f"harmonic 候选缺少 harmonic_n：{choices!r}")
+                    if len(hns) != 1:
+                        raise ValueError(f"commit_best: simple harmonic 多弦要求共享 harmonic_n：{sorted(hns)!r}")
+                    changes["harmonic_n"] = str(int(next(iter(hns))))  # type: ignore[arg-type]
+                    return changes
+
+                raise ValueError(f"未知 technique：{technique!r}")
+
+            raise ValueError(f"commit_best: chord 写回要求 staff2 form 为 simple/complex，收到：{form!r}")
+
+        ops: list[EditOp] = []
+        for a in sol0.assignments:
+            eid = str(a.get("eid") or "")
+            if not eid:
+                raise ValueError("solution assignment 缺少 eid")
+            ev = by_eid.get(eid)
+            if ev is None:
+                raise ValueError(f"solution assignment 引用未知 eid：{eid}")
+            if ev.staff2_kv.get("user_touched") == "1":
+                continue
+            if ev.staff2_kv.get("truth_src") == "user":
+                continue
+
+            if "choice" in a:
+                choice = a["choice"]
+                if not isinstance(choice, dict):
+                    raise ValueError(f"solution assignment choice 非 dict：eid={eid}")
+                patch = choice_to_changes(choice, existing_kv=ev.staff2_kv)
+                diff = _diff_changes(ev.staff2_kv, patch)
+                if diff:
+                    ops.append(EditOp(op="update_guqin_event", eid=eid, changes=diff))
+                continue
+
+            if "choices" in a:
+                choices = a["choices"]
+                if not isinstance(choices, list):
+                    raise ValueError(f"solution assignment choices 非 list：eid={eid}")
+                patch = chord_choices_to_changes(choices, existing_kv=ev.staff2_kv)
+                diff = _diff_changes(ev.staff2_kv, patch)
+                if diff:
+                    ops.append(EditOp(op="update_guqin_event", eid=eid, changes=diff))
+                continue
+
+            raise ValueError(f"solution assignment 缺少 choice/choices：eid={eid}")
+
+        if not ops:
+            return {
+                "project_id": project_id,
+                "revision": meta.current_revision,
+                "tuning": stage1["tuning"],
+                "stage1_warnings": stage1.get("warnings", []),
+                "stage2": {"k": req.k, "solutions": [s.__dict__ for s in sols]},
+                "commit": {"skipped": True, "reason": "no_ops_after_filters_or_no_changes"},
+            }
+
+        xml2 = apply_edit_ops(musicxml_bytes=xml_bytes, ops=ops, edit_source="auto")
+        delta_ops = [
+            {
+                "op": "stage2_commit_best",
+                "solution_id": sol0.solution_id,
+                "k": req.k,
+                "written_ops": [{"op": o.op, "eid": o.eid, "changes": o.changes} for o in ops],
+            }
+        ]
+        new_meta = save_new_revision(
+            project_id=project_id,
+            base_revision=meta.current_revision,
+            musicxml_bytes=xml2,
+            delta_ops=delta_ops,
+            message=req.message or "stage2 commit_best",
+        )
+        view2 = build_score_view(project_id=project_id, revision=new_meta.current_revision, musicxml_bytes=xml2)
         return {
             "project_id": project_id,
             "revision": meta.current_revision,
             "tuning": stage1["tuning"],
             "stage1_warnings": stage1.get("warnings", []),
             "stage2": {"k": req.k, "solutions": [s.__dict__ for s in sols]},
+            "commit": {"project": asdict(new_meta), "score": asdict(view2)},
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e

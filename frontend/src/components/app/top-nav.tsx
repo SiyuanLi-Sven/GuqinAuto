@@ -21,7 +21,7 @@ export function TopNav() {
             <span className="text-sm font-semibold tracking-tight">
               GuqinAuto
             </span>
-            <Badge variant="outline">MVP</Badge>
+            <Badge variant="outline">Developing</Badge>
           </Link>
           <div className="hidden items-center gap-1 sm:flex">
             {items.map((it) => (

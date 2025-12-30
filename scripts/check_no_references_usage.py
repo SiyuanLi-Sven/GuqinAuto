@@ -10,6 +10,9 @@
 注意：
 - 该检查是“保守”的：宁可误报，也不允许悄悄引入 references 依赖。
 - 文档（md）不在扫描范围内。
+
+运行：
+  python scripts/check_no_references_usage.py
 """
 
 from __future__ import annotations

@@ -114,11 +114,11 @@ v0.3 的目标不是推翻 v0.2 的“谱字语法树真值”，而是在保持
   - pitch 由 `xian`（弦序）与项目 `tuning` 确定
 - `sound=pressed`：
   - 若 `xian` 长度为 1：MUST 提供 `pos_ratio`
-  - 若 `xian` 长度为 2：MUST 提供 `pos_ratio_1` 与 `pos_ratio_2`（分别对应 `GuqinLink.slot=1/2`）
+  - 若 `xian` 长度为 N（N≥2）：MUST 提供 `pos_ratio_1..pos_ratio_N`（分别对应 `GuqinLink.slot=1..N`）
 - `sound=harmonic`：
   - MUST 提供 `harmonic_n`（自然泛音阶数）
   - `harmonic_k` MAY 提供（用于显示/定位节点；不影响 pitch）
-  - 多弦（`xian` 长度为 2）时，目前约定两弦共享同一个 `harmonic_n`（更复杂情况需另行扩展）
+  - 多弦（`xian` 长度为 N）时，目前约定各弦共享同一个 `harmonic_n`（更复杂情况需另行扩展）
 
 `pos_ratio` 的定义（写死，与 stage1 保持一致）：
 
@@ -295,6 +295,7 @@ staff 1 的每个 `<note>`（包括 chord 内的每个 `<note>`）MUST 携带：
 - 独体形式：记号（Marker）与联袂指法（BothFinger）
 
 符号全集以本仓库的 token 规范为准：`docs/data/GuqinJZP-JianzipuTokens v0.1.yaml`。
+同时，“价位/多音/slot 结构”等约束以本仓库的技法元数据为准：`docs/data/GuqinJZP-TechniqueMeta v0.1.yaml`。
 
 > 备注：token 规范当前只覆盖“可解析语法树”的集合（不含 `按音/泛音/就` 这类未纳入语法树的词）。
 
@@ -348,11 +349,12 @@ staff 1 的每个 `<note>`（包括 chord 内的每个 `<note>`）MUST 携带：
 | `fen` | 分位 | MAY；`1..9`/`HALF`（仅当 `hui!=OUT` 时允许） |
 | `special` | 特殊指法 | MAY；来自 `特殊指法`（目前 `注/绰`） |
 | `xian_finger` | 弦序指法 | MUST；来自 `弦序指法`（如 `勾/剔/抹挑/...`） |
-| `xian` | 弦序列表 | MUST；`1..7`，逗号分隔；长度 1 或 2（与 `jianzipu` 的渲染能力对齐） |
+| `xian` | 弦序列表 | MUST；`1..7`，逗号分隔；长度由 `docs/data/GuqinJZP-TechniqueMeta v0.1.yaml` 约束（例如 `历` 允许 2 或 3） |
 
 一致性约束（MUST）：
 
 - 若 `xian` 长度为 2，则 staff 1 该事件 MUST 是 chord（两个 `<note>`），并且它们的 `GuqinLink.slot` MUST 分别是 `1` 和 `2`
+- 若 `xian` 长度为 N（N≥2），则 `xian` 列表 MUST **不含重复弦号**（同一时刻一根弦不能发两个音）
 - staff 1 chord 内每个 `<note>` SHOULD 带 `<notations><technical><string>n</string></technical></notations>`，与 `xian` 对齐；不一致 MUST 报错
 
 ### 7.5 `form=complex`（复式/撮式：一个谱字对应多个同时音）
@@ -379,6 +381,7 @@ staff 1 的每个 `<note>`（包括 chord 内的每个 `<note>`）MUST 携带：
 
 - staff 1 该事件 MUST 是 chord 且恰好 2 个 `<note>`
 - 两个 `<note>` MUST 分别以 `GuqinLink.slot=L` / `GuqinLink.slot=R` 标注槽位
+- `l_xian` 与 `r_xian` MUST 不相等（同一时刻一根弦不能发两个音）
 - staff 1 两个 `<note>` 的 `<string>` SHOULD 分别等于 `l_xian` / `r_xian`；不一致 MUST 报错
 
 > 说明：v0.2 的 complex 固定 2 个子式。将来如果要支持“三声/多子式”，建议通过 `form=both` + 扩展字段实现，而不是“假装支持”。
@@ -506,12 +509,17 @@ KV 规则与第 5 节一致，字段建议：
 
 ## 12. 示例文件
 
-位于 `docs/data/examples/`：
+位于 `docs/data/examples/`（建议优先用 v0.3 示例做端到端测试）：
 
-- `guqin_jzp_profile_v0.2_minimal.musicxml`：单事件（simple）最小闭环示例
-- `guqin_jzp_profile_v0.2_complex_chord.musicxml`：撮式/复式（complex）+ staff 1 chord + slot=L/R
-- `guqin_jzp_profile_v0.2_direction_tokens.musicxml`：direction 方式承载 `GuqinTok@0.2`（marker/both）
-- `guqin_jzp_profile_v0.2_showcase.musicxml`：综合示例（abbr/ortho、撮式 chord、历双弦 chord、direction token）
+- `guqin_jzp_profile_v0.3_mary_had_a_little_lamb_input.musicxml`：输入谱（staff1 音高+节奏；staff2 占位），用于“生成初稿/一致性收敛”回归测试
+- `guqin_jzp_profile_v0.3_pos_ratio_pitch_check.musicxml`：v0.3 `pos_ratio/sound` 的 pitch 一致性检查示例
+
+历史 v0.2 示例已迁移到 `docs/data/old/`（不再作为主链路示例，但保留供参考）：
+
+- `docs/data/old/guqin_jzp_profile_v0.2_minimal.musicxml`
+- `docs/data/old/guqin_jzp_profile_v0.2_complex_chord.musicxml`
+- `docs/data/old/guqin_jzp_profile_v0.2_direction_tokens.musicxml`
+- `docs/data/old/guqin_jzp_profile_v0.2_showcase.musicxml`
 
 配套 token 规范：
 

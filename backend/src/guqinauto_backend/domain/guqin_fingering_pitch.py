@@ -176,57 +176,42 @@ def _derive_v0_3(kv: dict[str, str], *, tuning: ProjectTuning) -> tuple[list[Der
         if len(xian_list) == 1:
             s = xian_list[0]
             if sound == "open":
-                return ([ _derive_one_open(slot=None, string_1_to_7=s, tuning=tuning) ], [])
+                return ([_derive_one_open(slot=None, string_1_to_7=s, tuning=tuning)], [])
             if sound == "pressed":
                 pr_s = kv.get("pos_ratio")
                 if pr_s is None:
                     return ([], ["missing_pos_ratio_for_pressed"])
                 pr = _parse_float(pr_s, name="pos_ratio")
-                return ([ _derive_one_pressed(slot=None, string_1_to_7=s, pos_ratio=pr, tuning=tuning) ], [])
-            # harmonic
+                return ([_derive_one_pressed(slot=None, string_1_to_7=s, pos_ratio=pr, tuning=tuning)], [])
             hn = kv.get("harmonic_n")
             if hn is None:
                 return ([], ["missing_harmonic_n_for_harmonic"])
-            return ([ _derive_one_harmonic(slot=None, string_1_to_7=s, harmonic_n=_parse_int(hn, name="harmonic_n"), tuning=tuning) ], [])
+            return ([_derive_one_harmonic(slot=None, string_1_to_7=s, harmonic_n=_parse_int(hn, name="harmonic_n"), tuning=tuning)], [])
 
-        if len(xian_list) == 2:
-            s1, s2 = xian_list
-            if sound == "open":
-                return (
-                    [
-                        _derive_one_open(slot="1", string_1_to_7=s1, tuning=tuning),
-                        _derive_one_open(slot="2", string_1_to_7=s2, tuning=tuning),
-                    ],
-                    [],
-                )
+        # 多弦：slot 采用 "1..N"
+        derived: list[DerivedPitch] = []
+        if sound == "open":
+            for idx, s in enumerate(xian_list, start=1):
+                derived.append(_derive_one_open(slot=str(idx), string_1_to_7=s, tuning=tuning))
+            return (derived, [])
 
-            if sound == "pressed":
-                pr1_s = kv.get("pos_ratio_1")
-                pr2_s = kv.get("pos_ratio_2")
-                if pr1_s is None or pr2_s is None:
-                    return ([], ["missing_pos_ratio_1_or_2_for_pressed_multistring"])
-                return (
-                    [
-                        _derive_one_pressed(slot="1", string_1_to_7=s1, pos_ratio=_parse_float(pr1_s, name="pos_ratio_1"), tuning=tuning),
-                        _derive_one_pressed(slot="2", string_1_to_7=s2, pos_ratio=_parse_float(pr2_s, name="pos_ratio_2"), tuning=tuning),
-                    ],
-                    [],
-                )
+        if sound == "pressed":
+            for idx, s in enumerate(xian_list, start=1):
+                key = f"pos_ratio_{idx}"
+                pr_s = kv.get(key)
+                if pr_s is None:
+                    return ([], [f"missing_{key}_for_pressed_multistring"])
+                derived.append(_derive_one_pressed(slot=str(idx), string_1_to_7=s, pos_ratio=_parse_float(pr_s, name=key), tuning=tuning))
+            return (derived, [])
 
-            # harmonic
-            hn = kv.get("harmonic_n")
-            if hn is None:
-                return ([], ["missing_harmonic_n_for_harmonic"])
-            harmonic_n = _parse_int(hn, name="harmonic_n")
-            return (
-                [
-                    _derive_one_harmonic(slot="1", string_1_to_7=s1, harmonic_n=harmonic_n, tuning=tuning),
-                    _derive_one_harmonic(slot="2", string_1_to_7=s2, harmonic_n=harmonic_n, tuning=tuning),
-                ],
-                ["harmonic_multistring_assumes_same_n"],
-            )
-
-        return ([], [f"unsupported_xian_list_length:{len(xian_list)}"])
+        # harmonic（默认认为同一谱字共享 harmonic_n；更复杂情况需 Profile 扩展）
+        hn = kv.get("harmonic_n")
+        if hn is None:
+            return ([], ["missing_harmonic_n_for_harmonic"])
+        harmonic_n = _parse_int(hn, name="harmonic_n")
+        for idx, s in enumerate(xian_list, start=1):
+            derived.append(_derive_one_harmonic(slot=str(idx), string_1_to_7=s, harmonic_n=harmonic_n, tuning=tuning))
+        return (derived, ["harmonic_multistring_assumes_same_n"])
 
     if form == "complex":
         l_xian = kv.get("l_xian")
@@ -297,15 +282,8 @@ def _derive_v0_2_open_only(kv: dict[str, str], *, tuning: ProjectTuning) -> tupl
             return ([], ["uncheckable_v0_2_requires_v0_3_truth"])
         if len(xian_list) == 1:
             return ([_derive_one_open(slot=None, string_1_to_7=xian_list[0], tuning=tuning)], [])
-        if len(xian_list) == 2:
-            return (
-                [
-                    _derive_one_open(slot="1", string_1_to_7=xian_list[0], tuning=tuning),
-                    _derive_one_open(slot="2", string_1_to_7=xian_list[1], tuning=tuning),
-                ],
-                [],
-            )
-        return ([], ["unsupported_xian_list_length"])
+        derived = [_derive_one_open(slot=str(i), string_1_to_7=s, tuning=tuning) for i, s in enumerate(xian_list, start=1)]
+        return (derived, [])
 
     # complex
     l_xian = kv.get("l_xian")
